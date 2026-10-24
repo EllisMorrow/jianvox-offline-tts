@@ -1,0 +1,403 @@
+"""Focused Windows desktop reader; text stays in memory only."""
+import logging
+import os
+import queue
+import sys
+sys.dont_write_bytecode = True
+import threading
+import time
+import tkinter as tk
+from tkinter import messagebox, filedialog
+from pathlib import Path
+import customtkinter as ctk
+from settings import PROJECT, USER_SETTINGS, Preferences
+from privacy import clear_legacy_artifacts, quiet_runtime
+import startup
+from hotkeys import ACTION_NAMES, DEFAULT_HOTKEYS, validate_bindings
+from reader_core import Reader, VOICES
+from reader_ui import ReaderUI, BG, ACCENT
+from win_native import Native, clipboard_text, copy_selection, U
+
+from version import APP_NAME, VERSION
+
+
+class App:
+    def __init__(self, *, preview=False, start_hidden=False, demo=False):
+        self.diagnostics = quiet_runtime()
+        self.events = queue.Queue()
+        self.demo = demo
+        preview = preview or demo
+        self.preferences = Preferences() if demo else Preferences.load()
+        self.preview = preview
+        self.native = None if preview else Native(self.events, self.preferences.hotkeys)
+        if self.native and self.native.existing:
+            return
+        if not demo:
+            clear_legacy_artifacts()
+        ctk.set_appearance_mode("light")
+        self.root = ctk.CTk(fg_color=BG)
+        self.background_start = start_hidden
+        if start_hidden:
+            self.root.withdraw()
+        self.root.iconbitmap(str(PROJECT / "assets" / "app.ico"))
+        self.root.title(f"{APP_NAME} v{VERSION}" + (" · 界面演示" if demo else ""))
+        self.root.protocol("WM_DELETE_WINDOW", self.exit if demo else self.hide)
+        self.closed, self.tray_ok = False, True
+        self.copy_lock = threading.Lock()
+        self.hotkeys, self.metrics = {}, {}
+        self.save_timer = None
+        self.editor_request = None
+        self.exporting = False
+        self.export_id = None
+        self.export_summary = "正在估算剩余时间"
+        self.startup_enabled = tk.BooleanVar(value=False if demo else startup.is_enabled())
+        if self.startup_enabled.get() and not preview:
+            try:
+                startup.set_enabled(True)  # Refresh an already authorized startup entry after a move/update.
+            except OSError:
+                self.events.put(("error", "开机启动路径未能更新，请重新切换自启开关。"))
+        self.export_directory = tk.StringVar(value=self.preferences.export_directory)
+        self.status = tk.StringVar(value="正在准备声音…" if not preview else "界面演示 · 未加载模型")
+        self.hint = tk.StringVar()
+        self.voice = tk.StringVar(value=next(k for k, v in VOICES.items() if v == self.preferences.voice))
+        self.speed = tk.DoubleVar(value=self.preferences.speed)
+        self.volume = tk.DoubleVar(value=self.preferences.volume)
+        self.speed_text = tk.StringVar()
+        self.volume_text = tk.StringVar()
+        self.build()
+        self.sync_labels()
+        if demo:
+            self.text.insert("1.0", "让文字，自然地成为声音。\n\n选中一段文字，按下快捷键，即可开始离线朗读。\n\n你也可以将文章粘贴在这里，选择喜欢的声音，调整语速，然后导出为 MP3。所有示例内容仅用于展示界面。")
+            self.update_counter()
+        self.reader = None if preview else Reader(self.events)
+        if self.reader:
+            self.reader.audio.set_volume(self.preferences.volume)
+        self.root.after(60, self.poll)
+        if not start_hidden:
+            self.root.after(100, self.show)
+        self.root.mainloop()
+
+    def build(self):
+        self.ui = ReaderUI(self)
+        self.ui.build()
+
+    def sync_labels(self):
+        bindings = self.preferences.hotkeys
+        enabled = [f"{key} {ACTION_NAMES[action]}" for action, key in bindings.items() if key]
+        self.hint.set(" · ".join(enabled) if enabled else "快捷键已停用，可使用窗口按钮朗读。")
+        self.speed_text.set(f"{self.speed.get():.2f}×")
+        self.volume_text.set(f"{self.volume.get():.0%}")
+
+    def update_counter(self):
+        self.counter.configure(text=f"{len(self.text.get('1.0', 'end').strip())} 字")
+
+    def clear_text(self):
+        self.text.delete("1.0", "end")
+        self.text.edit_reset()
+        self.editor_request = None
+        self.update_counter()
+
+    def clear_completed_text(self, number):
+        if self.editor_request and self.editor_request[0] == number:
+            if self.text.get("1.0", "end").strip() == self.editor_request[1]:
+                self.clear_text()
+            self.editor_request = None
+
+    def choose_directory(self):
+        value = filedialog.askdirectory(parent=self.root, title="选择 MP3 保存目录",
+                                        initialdir=self.preferences.export_directory or str(Path.home()))
+        if value:
+            self.preferences.export_directory = value
+            self.export_directory.set(value)
+            self.persist()
+
+    def open_settings_folder(self):
+        USER_SETTINGS.mkdir(parents=True, exist_ok=True)
+        os.startfile(str(USER_SETTINGS))
+
+    def change_startup(self):
+        if self.demo:
+            self.startup_enabled.set(False)
+            return
+        try:
+            startup.set_enabled(self.startup_enabled.get())
+            self.status.set("已开启开机启动，下次登录后将进入系统托盘。" if self.startup_enabled.get() else "已关闭开机启动。")
+        except (OSError, ValueError) as exc:
+            self.startup_enabled.set(startup.is_enabled())
+            self.show_error(f"开机启动设置失败：{exc}")
+
+    def export_mp3(self):
+        if not self.reader or not self.reader.ready:
+            self.show_error("请等待声音准备完成。")
+            return
+        text = self.text.get("1.0", "end").strip()
+        if not text:
+            self.show_error("请先粘贴需要生成音频的文字。")
+            return
+        target = filedialog.asksaveasfilename(parent=self.root, title="导出 MP3（不会覆盖已有文件）",
+            initialdir=self.preferences.export_directory or str(Path.home() / "Music"), initialfile="朗读音频.mp3",
+            defaultextension=".mp3", filetypes=[("MP3 音频", "*.mp3")], confirmoverwrite=False)
+        if not target:
+            return
+        if Path(target).exists():
+            self.show_error("文件已存在。为保护原文件，请换一个文件名。")
+            return
+        try:
+            self.save_playback()
+            number = self.reader.submit(text, self.preferences.voice, self.preferences.style,
+                                       speed=self.preferences.speed, output=target)
+            self.export_id = number
+            self.export_summary = "正在估算剩余时间"
+            self.exporting = True
+            self.editor_request = (number, text)
+            self.preferences.export_directory = str(Path(target).parent)
+            self.export_directory.set(self.preferences.export_directory)
+            self.persist()
+            self.export_button.configure(state="disabled")
+            self.pause_button.configure(state="disabled")
+            self.ui.show_export_progress()
+            self.export_progress.set(0)
+            self.status.set("正在导出 MP3，准备第一段… 可点击停止取消。")
+        except (OSError, ValueError) as exc:
+            self.show_error(str(exc))
+
+    def defer_save(self):
+        if self.save_timer:
+            self.root.after_cancel(self.save_timer)
+        self.save_timer = self.root.after(450, self.save_playback)
+
+    def save_playback(self):
+        if self.save_timer:
+            self.root.after_cancel(self.save_timer)
+        self.save_timer = None
+        self.preferences.voice = VOICES[self.voice.get()]
+        self.preferences.speed = round(self.speed.get(), 2)
+        self.preferences.volume = round(self.volume.get(), 2)
+        self.persist()
+
+    def persist(self):
+        if self.demo:
+            return
+        try:
+            self.preferences.save()
+        except (OSError, ValueError) as exc:
+            logging.exception("Preference save failed")
+            self.show_error(f"设置未能保存：{exc}")
+
+    def playback_changed(self):
+        self.sync_labels()
+        if self.reader:
+            self.reader.audio.set_volume(self.volume.get())
+        self.defer_save()
+
+    def reset_speed(self):
+        self.speed.set(1.0)
+        self.playback_changed()
+
+    def save_style(self):
+        value = self.style_box.get("1.0", "end").strip()
+        if len(value) > 500:
+            self.show_error("语气说明最多 500 字。")
+            return
+        self.preferences.style = value
+        self.persist()
+        self.status.set("语气已保存，下次朗读生效。")
+
+    def default_keys(self):
+        for action, entry in self.key_entries.items():
+            entry.delete(0, "end")
+            entry.insert(0, DEFAULT_HOTKEYS[action])
+
+    def apply_hotkeys(self):
+        try:
+            bindings = validate_bindings({k: v.get() for k, v in self.key_entries.items()})
+        except ValueError as exc:
+            self.key_status.configure(text=str(exc), text_color="#B24B55")
+            return
+        if self.native:
+            self.key_save.configure(state="disabled")
+            self.native.retry(bindings)
+        else:
+            self.key_status.configure(text="预览模式不注册全局快捷键。")
+
+    def read(self, text, started=None):
+        if not self.reader:
+            return
+        try:
+            self.save_playback()
+            number = self.reader.submit(text, self.preferences.voice, self.preferences.style,
+                                        started, self.preferences.speed)
+            self.metrics = {"request": number, "characters": len(text.strip()), "speed": self.preferences.speed}
+            if text.strip() == self.text.get("1.0", "end").strip():
+                self.editor_request = (number, text.strip())
+            self.pause_button.configure(text="暂停")
+            self.status.set("正在生成声音…")
+        except ValueError as exc:
+            self.show_error(str(exc))
+
+    def read_clipboard(self):
+        try:
+            self.read(clipboard_text(clear_after=True))
+        except (ValueError, OSError) as exc:
+            self.show_error(str(exc))
+
+    def selection(self, started):
+        if not self.reader or not self.reader.ready:
+            self.show_error("声音仍在准备中，请等待“已就绪”。")
+            return
+        if not self.copy_lock.acquire(blocking=False):
+            return
+        self.reader.stop()
+        token = self.reader.number
+        key = self.hotkeys.get("read", self.preferences.hotkeys["read"])
+        def task():
+            try:
+                self.events.put(("selection_copied", (copy_selection(key), started, token)))
+            except (ValueError, OSError) as exc:
+                self.events.put(("copy_error", (str(exc), token)))
+            finally:
+                self.copy_lock.release()
+        threading.Thread(target=task, daemon=True).start()
+
+    def stop(self):
+        if self.reader:
+            self.reader.stop()
+
+    def pause(self):
+        if self.exporting:
+            self.status.set("导出音频可用“停止”取消；暂停键仅用于朗读播放。")
+        elif self.reader and self.reader.toggle_pause() is None:
+            self.status.set("当前没有正在朗读的内容。")
+
+    def show_error(self, text):
+        self.status.set(text)
+        self.dot.configure(text_color="#B24B55")
+        if not self.background_start:
+            self.show()
+
+    def show(self):
+        self.background_start = False
+        self.root.deiconify()
+        self.root.lift()
+        U.SetForegroundWindow(self.root.winfo_id())
+
+    def hide(self):
+        if self.tray_ok and self.native:
+            self.root.withdraw()
+        else:
+            self.root.iconify()
+
+    def poll(self):
+        changed = False
+        try:
+            while True:
+                kind, data = self.events.get_nowait()
+                changed = True
+                if kind == "read_selection":
+                    self.selection(data)
+                elif kind == "selection_copied" and data[2] == self.reader.number:
+                    self.read(data[0], data[1])
+                elif kind == "copy_error" and data[1] == self.reader.number:
+                    self.show_error(data[0])
+                elif kind == "stop":
+                    self.stop()
+                elif kind == "pause":
+                    self.pause()
+                elif kind == "show":
+                    self.show()
+                elif kind == "exit":
+                    self.exit()
+                    return
+                elif kind == "hotkeys":
+                    self.hotkeys = data["bindings"]
+                    self.key_save.configure(state="normal")
+                    if data["success"]:
+                        self.preferences.hotkeys = dict(self.hotkeys)
+                        self.persist()
+                        self.sync_labels()
+                        self.key_status.configure(text="快捷键已生效。", text_color="#27765C")
+                        for action, entry in self.key_entries.items():
+                            entry.delete(0, "end")
+                            entry.insert(0, self.hotkeys[action])
+                    else:
+                        self.key_status.configure(text=data["error"], text_color="#B24B55")
+                        self.show_error(data["error"])
+                elif kind == "tray_error":
+                    self.tray_ok = False
+                    self.show()
+                elif kind == "status":
+                    self.status.set(data)
+                elif kind == "ready":
+                    self.status.set("已就绪，随时可以开始朗读。")
+                    self.dot.configure(text_color="#329678")
+                elif kind == "error":
+                    self.show_error(data)
+                elif kind == "stopped":
+                    self.status.set("正在停止导出并清理临时音频…" if self.exporting else "已停止，可以开始新的朗读。")
+                    self.pause_button.configure(text="暂停")
+                elif kind == "paused" and data[0] == self.reader.number:
+                    self.status.set("已暂停，再按暂停键或点击继续即可接着朗读。" if data[1] else "正在继续朗读…")
+                    self.pause_button.configure(text="继续" if data[1] else "暂停")
+                elif kind == "first_audio" and data[0] == self.reader.number:
+                    self.metrics["first_output_seconds"] = round(data[1], 3)
+                    self.status.set(f"正在朗读 · {self.metrics.get('characters', '')} 字 · 约 {data[1]:.2f} 秒开始输出")
+                    self.dot.configure(text_color=ACCENT)
+                elif kind == "played" and data[0] == self.reader.number:
+                    self.metrics["buffer_gaps"] = data[1]
+                    self.status.set("朗读完成，随时可以继续。")
+                    self.dot.configure(text_color="#329678")
+                    self.pause_button.configure(text="暂停")
+                    self.clear_completed_text(data[0])
+                elif kind == "export_progress" and data[0] == self.export_id:
+                    _, done, total, eta = data
+                    self.export_progress.set(done / total)
+                    self.export_summary = f"{done / total:.0%} · 预计剩余 {int(eta)//60} 分 {int(eta)%60} 秒"
+                    self.status.set(f"正在导出 MP3 · {self.export_summary} · 可停止取消")
+                elif kind == "export_activity" and data[0] == self.export_id:
+                    self.status.set(f"正在导出 MP3 · 第 {data[1]}/{data[2]} 段 · {self.export_summary} · 可停止取消")
+                elif kind in {"export_done", "export_cancelled"}:
+                    number = data[0] if kind == "export_done" else data
+                    if number == self.export_id:
+                        self.exporting = False
+                        self.export_id = None
+                        self.export_button.configure(state="normal")
+                        self.pause_button.configure(state="normal", text="暂停")
+                        self.ui.hide_export_progress()
+                        if kind == "export_done":
+                            self.status.set("MP3 已保存到你选择的位置。")
+                            self.clear_completed_text(number)
+                        elif self.status.get().startswith("正在"):
+                            self.status.set("导出已取消，临时音频已清理。")
+                        self.editor_request = None
+                elif kind == "audio_warning":
+                    logging.warning(data)
+        except queue.Empty:
+            pass
+        if not self.closed:
+            self.root.after(60, self.poll)
+
+    def exit(self):
+        self.closed = True
+        self.save_playback()
+        if self.reader:
+            self.reader.close()
+        if self.native:
+            self.native.close()
+        self.clear_text()
+        self.root.withdraw()
+        self.exit_started = time.monotonic()
+        self.finish_exit()
+
+    def finish_exit(self):
+        if self.reader and self.reader.thread.is_alive() and time.monotonic() - self.exit_started < 10:
+            self.root.after(50, self.finish_exit)
+            return
+        self.root.destroy()
+
+
+if __name__ == "__main__":
+    try:
+        App(preview="--preview" in sys.argv, start_hidden="--tray" in sys.argv, demo="--demo" in sys.argv)
+    except Exception:
+        logging.exception("Desktop application failed")
+        messagebox.showerror(APP_NAME, "程序未能启动。请检查运行环境与模型文件；程序未保存错误日志。")

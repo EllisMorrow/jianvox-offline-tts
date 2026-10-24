@@ -1,0 +1,33 @@
+name: Source checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}\app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install lightweight test dependencies
+        run: python -m pip install numpy==2.2.6 customtkinter==5.2.2 darkdetect==0.8.0 audiotsm==0.1.2 packaging==26.3 soundfile==0.13.1
+      - name: Unit tests without model downloads
+        run: python -m unittest discover -s tests -v
+      - name: UI construction without GPU
+        run: python tests/smoke_ui.py
+      - name: Hidden startup window check
+        run: python tests/smoke_ui.py --hidden
+      - name: Window layout and scaling boundaries
+        run: python tests/check_layout.py
+      - name: Check download manifest without network
+        run: python scripts/download_tts.py --check
+      - name: Build allowlisted source package
+        run: python scripts/build_release.py

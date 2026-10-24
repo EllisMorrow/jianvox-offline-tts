@@ -1,0 +1,1390 @@
+{
+  "schema": 1,
+  "created_at": "2026-10-25T00:00:59.950484",
+  "model": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+  "python_target": "CPython 3.12 / Windows x64",
+  "cuda": "12.8",
+  "engine": "faster-qwen3-tts==0.5.4",
+  "sources_policy": "只使用魔搭国内官方仓库及国内镜像，不回退海外原站。",
+  "files": [
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/.gitattributes",
+      "size": 2247,
+      "sha256": "3737fe5e396888811ae6c1767b6fad3b17b00c6350f12fd0f502cd1bb37f7819",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=.gitattributes",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/.gitattributes"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/README.md",
+      "size": 57846,
+      "sha256": "64f65e809b51cc0c35f393fbbfcc2d735c0cb3fdbbc6f3fdc4a5e6ce55e9d088",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=54dfa57e196341bfa4994c97ad1f0f874964eeab&FilePath=README.md",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/54dfa57e196341bfa4994c97ad1f0f874964eeab/README.md"
+      ],
+      "revision": "54dfa57e196341bfa4994c97ad1f0f874964eeab"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/config.json",
+      "size": 4908,
+      "sha256": "17a07f527a1c25ea30b4e023a184482a23d3e279d697b1dc81b1bde498d29cf9",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=config.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/config.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/configuration.json",
+      "size": 47,
+      "sha256": "c502b6328c67638b401df8dd05de89e9e8d1cff9cd0ada10dfbdbe13556c20de",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=36b5331657870420863c6af19f04d737b047d2ac&FilePath=configuration.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/36b5331657870420863c6af19f04d737b047d2ac/configuration.json"
+      ],
+      "revision": "36b5331657870420863c6af19f04d737b047d2ac"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/generation_config.json",
+      "size": 245,
+      "sha256": "f1b90b4513f3b34c62851049e2492d7b4c5940daf1276f89c82b8ef04127f3aa",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=generation_config.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/generation_config.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/merges.txt",
+      "size": 1671839,
+      "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=merges.txt",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/merges.txt"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/model.safetensors",
+      "size": 3833402552,
+      "sha256": "38b1d5971bdbd982b561cccec982669a53b0537c3cf5e9bd4778ed07bb2f5137",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=model.safetensors",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/model.safetensors"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/preprocessor_config.json",
+      "size": 127,
+      "sha256": "efdde1022ea9d76928bf7a9cd53139138f5ba2e466e837f08f6105ab1af1c119",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=preprocessor_config.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/preprocessor_config.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/speech_tokenizer/config.json",
+      "size": 2336,
+      "sha256": "ee65bb901c876664ab8707c487157aa1a6ee57c65969b28fb5ec9dc211e68167",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=speech_tokenizer%2Fconfig.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/speech_tokenizer/config.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/speech_tokenizer/configuration.json",
+      "size": 76,
+      "sha256": "6bc26d64eb5024b4d1dab5a52371958b429256d6c9d59787f1f5294a54e0cebd",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=speech_tokenizer%2Fconfiguration.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/speech_tokenizer/configuration.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/speech_tokenizer/model.safetensors",
+      "size": 682293092,
+      "sha256": "836b7b357f5ea43e889936a3709af68dfe3751881acefe4ecf0dbd30ba571258",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=speech_tokenizer%2Fmodel.safetensors",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/speech_tokenizer/model.safetensors"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/speech_tokenizer/preprocessor_config.json",
+      "size": 234,
+      "sha256": "fcb3805e597e786d4067706e602f6688524640f8d3396790e2e09b5942fcbdfb",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=speech_tokenizer%2Fpreprocessor_config.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/speech_tokenizer/preprocessor_config.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/tokenizer_config.json",
+      "size": 7344,
+      "sha256": "dc3c31c3bdaedd5016382bb3cbe07323026775ad51f5a4fb564505992ae4a670",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=tokenizer_config.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/tokenizer_config.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "模型/Qwen3-TTS-12Hz-1.7B-CustomVoice/vocab.json",
+      "size": 2776833,
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "group": "模型",
+      "urls": [
+        "https://modelscope.cn/api/v1/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/repo?Revision=ae999bce1d1356e93686274865bc72744daab1a5&FilePath=vocab.json",
+        "https://modelscope.cn/models/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice/resolve/ae999bce1d1356e93686274865bc72744daab1a5/vocab.json"
+      ],
+      "revision": "ae999bce1d1356e93686274865bc72744daab1a5"
+    },
+    {
+      "path": "安装包/python-3.12.10-amd64.exe",
+      "size": 26964224,
+      "sha256": "67b5635e80ea51072b87941312d00ec8927c4db9ba18938f7ad2d27b328b95fb",
+      "group": "Python 安装程序",
+      "urls": [
+        "https://mirrors.huaweicloud.com/python/3.12.10/python-3.12.10-amd64.exe"
+      ]
+    },
+    {
+      "path": "安装包/wheels/accelerate-1.12.0-py3-none-any.whl",
+      "size": 380935,
+      "sha256": "3e2091cd341423207e2f084a6654b1efcd250dc326f2a37d6dde446e07cabb11",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/9f/d2/c581486aa6c4fbd7394c23c47b83fa1a919d34194e16944241daf9e762dd/accelerate-1.12.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/9f/d2/c581486aa6c4fbd7394c23c47b83fa1a919d34194e16944241daf9e762dd/accelerate-1.12.0-py3-none-any.whl"
+      ],
+      "package": "accelerate",
+      "version": "1.12.0"
+    },
+    {
+      "path": "安装包/wheels/aiofiles-24.1.0-py3-none-any.whl",
+      "size": 15896,
+      "sha256": "b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/a5/45/30bb92d442636f570cb5651bc661f52b610e2eec3f891a5dc3a4c3667db0/aiofiles-24.1.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/a5/45/30bb92d442636f570cb5651bc661f52b610e2eec3f891a5dc3a4c3667db0/aiofiles-24.1.0-py3-none-any.whl"
+      ],
+      "package": "aiofiles",
+      "version": "24.1.0"
+    },
+    {
+      "path": "安装包/wheels/annotated_doc-0.0.5-py3-none-any.whl",
+      "size": 5302,
+      "sha256": "117bac03a25ede5df5440e855b32d556049ca169ead221505badf432fed4b101",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/3e/30/e900b21425a860e195f32e37657aa1f7c7f2b1bfb26f03ca209b90933c06/annotated_doc-0.0.5-py3-none-any.whl"
+      ],
+      "package": "annotated-doc",
+      "version": "0.0.5"
+    },
+    {
+      "path": "安装包/wheels/annotated_types-0.8.0-py3-none-any.whl",
+      "size": 13427,
+      "sha256": "f072f4d804ea359e4eaf198b1af7a8b0943881a87f31bb764f8bf219bb9419e0",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/99/91/8acff4f5e50511b911bbccb72b8628a49c68ce14148cd9f6431094859a90/annotated_types-0.8.0-py3-none-any.whl"
+      ],
+      "package": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "path": "安装包/wheels/anyio-4.15.1-py3-none-any.whl",
+      "size": 132079,
+      "sha256": "6152fdbbf9a77fdec97731721bebf7c4c44f7c29b424b0065826173efc7ed101",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/12/b8/4bd346e22b28902df4d651910f5242c28d84e4a5c2435ca5c3f797ed7e2e/anyio-4.15.1-py3-none-any.whl"
+      ],
+      "package": "anyio",
+      "version": "4.15.1"
+    },
+    {
+      "path": "安装包/wheels/audioread-3.1.0-py3-none-any.whl",
+      "size": 23143,
+      "sha256": "b30d1df6c5d3de5dcef0fb0e256f6ea17bdcf5f979408df0297d8a408e2971b4",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/7e/16/fbe8e1e185a45042f7cd3a282def5bb8d95bb69ab9e9ef6a5368aa17e426/audioread-3.1.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/7e/16/fbe8e1e185a45042f7cd3a282def5bb8d95bb69ab9e9ef6a5368aa17e426/audioread-3.1.0-py3-none-any.whl"
+      ],
+      "package": "audioread",
+      "version": "3.1.0"
+    },
+    {
+      "path": "安装包/wheels/brotli-1.2.1-cp312-cp312-win_amd64.whl",
+      "size": 371081,
+      "sha256": "f5342b8256476554b4045db8b7bf4dc4044d0405485f220f0cd80764bc0d7faf",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/3e/82/b7f6c56393f2224ff4108cf1cc255921be1c0ae5962163edbe367c8a55bc/brotli-1.2.1-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/3e/82/b7f6c56393f2224ff4108cf1cc255921be1c0ae5962163edbe367c8a55bc/brotli-1.2.1-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "brotli",
+      "version": "1.2.1"
+    },
+    {
+      "path": "安装包/wheels/certifi-2026.10.23-py3-none-any.whl",
+      "size": 135082,
+      "sha256": "e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl"
+      ],
+      "package": "certifi",
+      "version": "2026.10.23"
+    },
+    {
+      "path": "安装包/wheels/cffi-2.1.1-cp312-cp312-win_amd64.whl",
+      "size": 185919,
+      "sha256": "f53e442b08449d42821fa4a4fba000095af9f62742a500f978a9f557ec44339a",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/d9/79/615cc094e2fb508cade7de88d3b4f6c4ec2bab695c97bce9153dc65aadf5/cffi-2.1.1-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/d9/79/615cc094e2fb508cade7de88d3b4f6c4ec2bab695c97bce9153dc65aadf5/cffi-2.1.1-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "path": "安装包/wheels/charset_normalizer-3.5.2-cp312-cp312-win_amd64.whl",
+      "size": 207486,
+      "sha256": "780fbe7cab297b81dad9fb8dc5eb003c0468ffb0d9e5f65068c53a34661a96bc",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/eb/e6/e6e083884cbcfd49c64865af05027fe7011be7b2d9179524f099a1b611f3/charset_normalizer-3.5.2-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/eb/e6/e6e083884cbcfd49c64865af05027fe7011be7b2d9179524f099a1b611f3/charset_normalizer-3.5.2-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "charset-normalizer",
+      "version": "3.5.2"
+    },
+    {
+      "path": "安装包/wheels/click-8.5.0-py3-none-any.whl",
+      "size": 125251,
+      "sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl"
+      ],
+      "package": "click",
+      "version": "8.5.0"
+    },
+    {
+      "path": "安装包/wheels/cloudpickle-3.1.2-py3-none-any.whl",
+      "size": 22228,
+      "sha256": "9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl"
+      ],
+      "package": "cloudpickle",
+      "version": "3.1.2"
+    },
+    {
+      "path": "安装包/wheels/colorama-0.4.6-py2.py3-none-any.whl",
+      "size": 25335,
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl"
+      ],
+      "package": "colorama",
+      "version": "0.4.6"
+    },
+    {
+      "path": "安装包/wheels/coloredlogs-15.0.1-py2.py3-none-any.whl",
+      "size": 46018,
+      "sha256": "612ee75c546f53e92e70049c9dbfcc18c935a2b9a53b66085ce9ef6a6e5c0934",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/a7/06/3d6badcf13db419e25b07041d9c7b4a2c331d3f4e7134445ec5df57714cd/coloredlogs-15.0.1-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/a7/06/3d6badcf13db419e25b07041d9c7b4a2c331d3f4e7134445ec5df57714cd/coloredlogs-15.0.1-py2.py3-none-any.whl"
+      ],
+      "package": "coloredlogs",
+      "version": "15.0.1"
+    },
+    {
+      "path": "安装包/wheels/decorator-5.3.1-py3-none-any.whl",
+      "size": 10365,
+      "sha256": "f47fe6fdbd2edd623ecfe36875d37aba411624e2670dd395dddae1358689bb3c",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/05/7f/798705f5296a58ca505d600456748d1be48078eac8a7050d8a98bc9edb89/decorator-5.3.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/05/7f/798705f5296a58ca505d600456748d1be48078eac8a7050d8a98bc9edb89/decorator-5.3.1-py3-none-any.whl"
+      ],
+      "package": "decorator",
+      "version": "5.3.1"
+    },
+    {
+      "path": "安装包/wheels/einops-0.8.2-py3-none-any.whl",
+      "size": 65638,
+      "sha256": "54058201ac7087911181bfec4af6091bb59380360f069276601256a76af08193",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/2a/09/f8d8f8f31e4483c10a906437b4ce31bdf3d6d417b73fe33f1a8b59e34228/einops-0.8.2-py3-none-any.whl"
+      ],
+      "package": "einops",
+      "version": "0.8.2"
+    },
+    {
+      "path": "安装包/wheels/fastapi-0.162.0-py3-none-any.whl",
+      "size": 148912,
+      "sha256": "3785963de305dd09912426cb81f2d230fce98ab3521cdfe97265c8d14983128c",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b4/4f/3f2c25c9b43970b5e9a08beb5e04776247edea684ddc0930f4f02f0bb6cb/fastapi-0.162.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b4/4f/3f2c25c9b43970b5e9a08beb5e04776247edea684ddc0930f4f02f0bb6cb/fastapi-0.162.0-py3-none-any.whl"
+      ],
+      "package": "fastapi",
+      "version": "0.162.0"
+    },
+    {
+      "path": "安装包/wheels/faster_qwen3_tts-0.5.4-py3-none-any.whl",
+      "size": 43858,
+      "sha256": "714bfb6d0a70fac177eac48b0a750e04bd597ab9aa86d35c4271aa15d0d1b716",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b3/e5/074b3ca7bb05f2d3564a456bc7620c24e65edeb1288c118a4b0506d55f11/faster_qwen3_tts-0.5.4-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b3/e5/074b3ca7bb05f2d3564a456bc7620c24e65edeb1288c118a4b0506d55f11/faster_qwen3_tts-0.5.4-py3-none-any.whl"
+      ],
+      "package": "faster-qwen3-tts",
+      "version": "0.5.4"
+    },
+    {
+      "path": "安装包/wheels/ffmpy-1.0.0-py3-none-any.whl",
+      "size": 5614,
+      "sha256": "5640e5f0fd03fb6236d0e119b16ccf6522db1c826fdf35dcb87087b60fd7504f",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/55/56/dd3669eccebb6d8ac81e624542ebd53fe6f08e1b8f2f8d50aeb7e3b83f99/ffmpy-1.0.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/55/56/dd3669eccebb6d8ac81e624542ebd53fe6f08e1b8f2f8d50aeb7e3b83f99/ffmpy-1.0.0-py3-none-any.whl"
+      ],
+      "package": "ffmpy",
+      "version": "1.0.0"
+    },
+    {
+      "path": "安装包/wheels/filelock-4.2.4-py3-none-any.whl",
+      "size": 162475,
+      "sha256": "301241438c57936ef93f4243a94f2559022268bfcf9b375a9a72eb0f8db8358e",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/e0/1b/5e74289a1878e666bb4b65fe5805a04cafcac2aa5f519ef1ead67ef91c56/filelock-4.2.4-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/e0/1b/5e74289a1878e666bb4b65fe5805a04cafcac2aa5f519ef1ead67ef91c56/filelock-4.2.4-py3-none-any.whl"
+      ],
+      "package": "filelock",
+      "version": "4.2.4"
+    },
+    {
+      "path": "安装包/wheels/flatbuffers-25.12.19-py2.py3-none-any.whl",
+      "size": 26661,
+      "sha256": "7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl"
+      ],
+      "package": "flatbuffers",
+      "version": "25.12.19"
+    },
+    {
+      "path": "安装包/wheels/fsspec-2026.9.0-py3-none-any.whl",
+      "size": 221738,
+      "sha256": "8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl"
+      ],
+      "package": "fsspec",
+      "version": "2026.9.0"
+    },
+    {
+      "path": "安装包/wheels/gradio-6.9.0-py3-none-any.whl",
+      "size": 42940853,
+      "sha256": "c173dd330c9247002a42222c85d76c0ecee65437eff808084e360862e7bbd24f",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b3/8b/dc357ab966544e4dc898a2fee326d755c5f54da82af71a1a802e3476e78e/gradio-6.9.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b3/8b/dc357ab966544e4dc898a2fee326d755c5f54da82af71a1a802e3476e78e/gradio-6.9.0-py3-none-any.whl"
+      ],
+      "package": "gradio",
+      "version": "6.9.0"
+    },
+    {
+      "path": "安装包/wheels/gradio_client-2.3.0-py3-none-any.whl",
+      "size": 58531,
+      "sha256": "9ec51a927888fc188e123a0ac5ad341d9265b325539a399554d1fc2604942e74",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/99/6a/41752781399811afbf8ac858f63c20eff354ed35169daa39604aefced4e8/gradio_client-2.3.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/99/6a/41752781399811afbf8ac858f63c20eff354ed35169daa39604aefced4e8/gradio_client-2.3.0-py3-none-any.whl"
+      ],
+      "package": "gradio_client",
+      "version": "2.3.0"
+    },
+    {
+      "path": "安装包/wheels/groovy-0.1.2-py3-none-any.whl",
+      "size": 14090,
+      "sha256": "7f7975bab18c729a257a8b1ae9dcd70b7cafb1720481beae47719af57c35fa64",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/28/27/3d6dcadc8a3214d8522c1e7f6a19554e33659be44546d44a2f7572ac7d2a/groovy-0.1.2-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/28/27/3d6dcadc8a3214d8522c1e7f6a19554e33659be44546d44a2f7572ac7d2a/groovy-0.1.2-py3-none-any.whl"
+      ],
+      "package": "groovy",
+      "version": "0.1.2"
+    },
+    {
+      "path": "安装包/wheels/h11-0.16.0-py3-none-any.whl",
+      "size": 37515,
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl"
+      ],
+      "package": "h11",
+      "version": "0.16.0"
+    },
+    {
+      "path": "安装包/wheels/hf_xet-1.7.0-cp38-abi3-win_amd64.whl",
+      "size": 3822644,
+      "sha256": "2b7bb5727889b0f2436dbaaad8fc4c3e66b8240d992716989e0c086b4278b1bc",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/4d/59/b35106dfa71b6eef605dc88bd038fe99c7f86fb132a15b60d0bf2f235b2c/hf_xet-1.7.0-cp38-abi3-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/4d/59/b35106dfa71b6eef605dc88bd038fe99c7f86fb132a15b60d0bf2f235b2c/hf_xet-1.7.0-cp38-abi3-win_amd64.whl"
+      ],
+      "package": "hf-xet",
+      "version": "1.7.0"
+    },
+    {
+      "path": "安装包/wheels/httpcore-1.0.9-py3-none-any.whl",
+      "size": 78784,
+      "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl"
+      ],
+      "package": "httpcore",
+      "version": "1.0.9"
+    },
+    {
+      "path": "安装包/wheels/httpx-0.28.1-py3-none-any.whl",
+      "size": 73517,
+      "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl"
+      ],
+      "package": "httpx",
+      "version": "0.28.1"
+    },
+    {
+      "path": "安装包/wheels/huggingface_hub-1.33.0-py3-none-any.whl",
+      "size": 846435,
+      "sha256": "04e434b06e100eddbce9a6e817d72693a7884b10a79bd67ab48080d5c07eb899",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/fc/16/963096d224b80909432dc16561a615fd33d2d13beef3ce4c63fa25e40867/huggingface_hub-1.33.0-py3-none-any.whl"
+      ],
+      "package": "huggingface_hub",
+      "version": "1.33.0"
+    },
+    {
+      "path": "安装包/wheels/humanfriendly-10.0-py2.py3-none-any.whl",
+      "size": 86794,
+      "sha256": "1697e1a8a8f550fd43c2865cd84542fc175a61dcb779b6fee18cf6b6ccba1477",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl"
+      ],
+      "package": "humanfriendly",
+      "version": "10.0"
+    },
+    {
+      "path": "安装包/wheels/idna-3.20-py3-none-any.whl",
+      "size": 69583,
+      "sha256": "ab7ae7122974553370f0bdb919e1a960b2cd1bc1ef0276416d896db81c14582c",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl"
+      ],
+      "package": "idna",
+      "version": "3.20"
+    },
+    {
+      "path": "安装包/wheels/jinja2-3.1.6-py3-none-any.whl",
+      "size": 134899,
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl"
+      ],
+      "package": "Jinja2",
+      "version": "3.1.6"
+    },
+    {
+      "path": "安装包/wheels/joblib-1.6.0-py3-none-any.whl",
+      "size": 306115,
+      "sha256": "3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/18/53/84099323c2ec4be98d935f63c033ac4151ee83836ca1050ede3b3aadf155/joblib-1.6.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/18/53/84099323c2ec4be98d935f63c033ac4151ee83836ca1050ede3b3aadf155/joblib-1.6.0-py3-none-any.whl"
+      ],
+      "package": "joblib",
+      "version": "1.6.0"
+    },
+    {
+      "path": "安装包/wheels/lazy_loader-0.6-py3-none-any.whl",
+      "size": 8791,
+      "sha256": "77253be3391b06124a0e16105bd663b6c54470af1a9ca8e1cf026f38d58ed056",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/23/93/4e45e37f26c820216704b36b8e67cc55c490a7abd287a78a26a2c0e21386/lazy_loader-0.6-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/23/93/4e45e37f26c820216704b36b8e67cc55c490a7abd287a78a26a2c0e21386/lazy_loader-0.6-py3-none-any.whl"
+      ],
+      "package": "lazy-loader",
+      "version": "0.6"
+    },
+    {
+      "path": "安装包/wheels/librosa-0.11.0-py3-none-any.whl",
+      "size": 260749,
+      "sha256": "0b6415c4fd68bff4c29288abe67c6d80b587e0e1e2cfb0aad23e4559504a7fa1",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b5/ba/c63c5786dfee4c3417094c4b00966e61e4a63efecee22cb7b4c0387dda83/librosa-0.11.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b5/ba/c63c5786dfee4c3417094c4b00966e61e4a63efecee22cb7b4c0387dda83/librosa-0.11.0-py3-none-any.whl"
+      ],
+      "package": "librosa",
+      "version": "0.11.0"
+    },
+    {
+      "path": "安装包/wheels/llvmlite-0.50.0-cp312-cp312-win_amd64.whl",
+      "size": 41865553,
+      "sha256": "c20595cc3a76e3c85140fdafbf9246c732ddf8e0e646ba2f4e4881f87567300d",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/64/70/f395702c20b514363061055b5bdebe3513e544139e6d412a5c86e8ea0b30/llvmlite-0.50.0-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/64/70/f395702c20b514363061055b5bdebe3513e544139e6d412a5c86e8ea0b30/llvmlite-0.50.0-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "llvmlite",
+      "version": "0.50.0"
+    },
+    {
+      "path": "安装包/wheels/markdown_it_py-4.2.0-py3-none-any.whl",
+      "size": 91687,
+      "sha256": "9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b3/81/4da04ced5a082363ecfa159c010d200ecbd959ae410c10c0264a38cac0f5/markdown_it_py-4.2.0-py3-none-any.whl"
+      ],
+      "package": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "path": "安装包/wheels/markupsafe-3.0.4-cp312-cp312-win_amd64.whl",
+      "size": 14303,
+      "sha256": "11935df9bf455ed0c04eb87bcd720f02b1fe5e02128a9430f23aed6f93336fc7",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/3f/bf/62495e180b7000aaf30000fff849e933f74264638057176cf46852500adc/markupsafe-3.0.4-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/3f/bf/62495e180b7000aaf30000fff849e933f74264638057176cf46852500adc/markupsafe-3.0.4-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "MarkupSafe",
+      "version": "3.0.4"
+    },
+    {
+      "path": "安装包/wheels/mdurl-0.1.2-py3-none-any.whl",
+      "size": 9979,
+      "sha256": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl"
+      ],
+      "package": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "path": "安装包/wheels/mpmath-1.3.0-py3-none-any.whl",
+      "size": 536198,
+      "sha256": "a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl"
+      ],
+      "package": "mpmath",
+      "version": "1.3.0"
+    },
+    {
+      "path": "安装包/wheels/msgpack-1.2.3-cp312-cp312-win_amd64.whl",
+      "size": 76744,
+      "sha256": "3ec409b0d6aa8e9eec6eaf881b893caa215dbe68c5319ca96e8a271d81bb111d",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/6f/4c/331b45f9b86fbda6b9e103244d189068e51f726d8c40021ed66e1f2c415e/msgpack-1.2.3-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/6f/4c/331b45f9b86fbda6b9e103244d189068e51f726d8c40021ed66e1f2c415e/msgpack-1.2.3-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "msgpack",
+      "version": "1.2.3"
+    },
+    {
+      "path": "安装包/wheels/narwhals-2.27.1-py3-none-any.whl",
+      "size": 483211,
+      "sha256": "d057df13f5852b8e157596e82eb5e955fad267425df5e420e0ee9863da483b31",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/d1/89/5d4c86da1130d9059681e5b6cd7645df5c10279a6a079c5c37dcb2cc6f3f/narwhals-2.27.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/d1/89/5d4c86da1130d9059681e5b6cd7645df5c10279a6a079c5c37dcb2cc6f3f/narwhals-2.27.1-py3-none-any.whl"
+      ],
+      "package": "narwhals",
+      "version": "2.27.1"
+    },
+    {
+      "path": "安装包/wheels/networkx-3.7-py3-none-any.whl",
+      "size": 2142205,
+      "sha256": "e3fd2c13a7814cee3746340d8d7f8598a67f16a58bf47fb7f8793fab6efca1b0",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/7e/cd/fe58041e9011f307c490e3e17dd48cc516448f7c698a3f2d9d9d65d7e6a8/networkx-3.7-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/7e/cd/fe58041e9011f307c490e3e17dd48cc516448f7c698a3f2d9d9d65d7e6a8/networkx-3.7-py3-none-any.whl"
+      ],
+      "package": "networkx",
+      "version": "3.7"
+    },
+    {
+      "path": "安装包/wheels/numba-0.68.0-cp312-cp312-win_amd64.whl",
+      "size": 2830891,
+      "sha256": "530961dc7e41ee358eca2b828baf7b645ce6fa466d778bb9dc73855dd103c4f7",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/7e/2b/1b1f8b118cec28513665d8a53ff4f037d6c05720bd9e6f32f947c93c367f/numba-0.68.0-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/7e/2b/1b1f8b118cec28513665d8a53ff4f037d6c05720bd9e6f32f947c93c367f/numba-0.68.0-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "numba",
+      "version": "0.68.0"
+    },
+    {
+      "path": "安装包/wheels/numpy-2.2.6-cp312-cp312-win_amd64.whl",
+      "size": 12614190,
+      "sha256": "c1f9540be57940698ed329904db803cf7a402f3fc200bfe599334c9bd84a40b2",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/36/fa/8c9210162ca1b88529ab76b41ba02d433fd54fecaf6feb70ef9f124683f1/numpy-2.2.6-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/36/fa/8c9210162ca1b88529ab76b41ba02d433fd54fecaf6feb70ef9f124683f1/numpy-2.2.6-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "numpy",
+      "version": "2.2.6"
+    },
+    {
+      "path": "安装包/wheels/onnxruntime-1.23.2-cp312-cp312-win_amd64.whl",
+      "size": 13470528,
+      "sha256": "25de5214923ce941a3523739d34a520aac30f21e631de53bba9174dc9c004435",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/c0/b4/569d298f9fc4d286c11c45e85d9ffa9e877af12ace98af8cab52396e8f46/onnxruntime-1.23.2-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/c0/b4/569d298f9fc4d286c11c45e85d9ffa9e877af12ace98af8cab52396e8f46/onnxruntime-1.23.2-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "onnxruntime",
+      "version": "1.23.2"
+    },
+    {
+      "path": "安装包/wheels/opentelemetry_api-1.45.1-py3-none-any.whl",
+      "size": 60256,
+      "sha256": "b31553efa588ae44bc306f863c785c5333a9ecc091248c6ee68b4b6c87fdedfb",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/1e/41/f7dcf80b81ee8e71c1a2b59f14208bc723edbd89ed027a73b175abf6348e/opentelemetry_api-1.45.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/1e/41/f7dcf80b81ee8e71c1a2b59f14208bc723edbd89ed027a73b175abf6348e/opentelemetry_api-1.45.1-py3-none-any.whl"
+      ],
+      "package": "opentelemetry-api",
+      "version": "1.45.1"
+    },
+    {
+      "path": "安装包/wheels/orjson-3.13.0-cp312-cp312-win_amd64.whl",
+      "size": 121538,
+      "sha256": "b571236d8393edcd3236e07423f762bfcf571f852aad667a3bce9e7b755e0790",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/58/9d/a1ca7321eeafd7d72e174cdc388cc96301f41516d863e7b1f64f0a1735be/orjson-3.13.0-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/58/9d/a1ca7321eeafd7d72e174cdc388cc96301f41516d863e7b1f64f0a1735be/orjson-3.13.0-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "orjson",
+      "version": "3.13.0"
+    },
+    {
+      "path": "安装包/wheels/packaging-26.3-py3-none-any.whl",
+      "size": 129956,
+      "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl"
+      ],
+      "package": "packaging",
+      "version": "26.3"
+    },
+    {
+      "path": "安装包/wheels/pandas-3.1.0-cp312-cp312-win_amd64.whl",
+      "size": 10748836,
+      "sha256": "b8c75dbb27c7d170b25c13dd35515da4bb92d40fe8bb3bd2c69a95de2218889b",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/10/72/06aefff8fe5efc5e1ca8bfb2695b648a435358f6dc224d4e40159314181a/pandas-3.1.0-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/10/72/06aefff8fe5efc5e1ca8bfb2695b648a435358f6dc224d4e40159314181a/pandas-3.1.0-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "pandas",
+      "version": "3.1.0"
+    },
+    {
+      "path": "安装包/wheels/pillow-12.3.0-cp312-cp312-win_amd64.whl",
+      "size": 7227137,
+      "sha256": "a2b55dd6b2a4c4b7d87ffa56bdb33fdc5fdb9a462173861a7bc097f17d91cb09",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/45/89/da2f7971a317f83d807fdd4065c0af40208e59e692cc43d315a71a0e96d1/pillow-12.3.0-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/45/89/da2f7971a317f83d807fdd4065c0af40208e59e692cc43d315a71a0e96d1/pillow-12.3.0-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "pillow",
+      "version": "12.3.0"
+    },
+    {
+      "path": "安装包/wheels/pip-25.2-py3-none-any.whl",
+      "size": 1752557,
+      "sha256": "6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b7/3f/945ef7ab14dc4f9d7f40288d2df998d1837ee0888ec3659c813487572faa/pip-25.2-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b7/3f/945ef7ab14dc4f9d7f40288d2df998d1837ee0888ec3659c813487572faa/pip-25.2-py3-none-any.whl"
+      ],
+      "package": "pip",
+      "version": "25.2"
+    },
+    {
+      "path": "安装包/wheels/platformdirs-4.13.5-py3-none-any.whl",
+      "size": 32779,
+      "sha256": "53d3ec4280b815c1e0b02edad7f9ee8fda1ba9c0865dd9c2e6e63849ce82fc1e",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/6c/8a/1d8cb3842909dc193a73835adedf412e32e18f8ffd59f43983949622fe6f/platformdirs-4.13.5-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/6c/8a/1d8cb3842909dc193a73835adedf412e32e18f8ffd59f43983949622fe6f/platformdirs-4.13.5-py3-none-any.whl"
+      ],
+      "package": "platformdirs",
+      "version": "4.13.5"
+    },
+    {
+      "path": "安装包/wheels/pooch-1.9.0-py3-none-any.whl",
+      "size": 67175,
+      "sha256": "f265597baa9f760d25ceb29d0beb8186c243d6607b0f60b83ecf14078dbc703b",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/2a/2d/d4bf65e47cea8ff2c794a600c4fd1273a7902f268757c531e0ee9f18aa58/pooch-1.9.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/2a/2d/d4bf65e47cea8ff2c794a600c4fd1273a7902f268757c531e0ee9f18aa58/pooch-1.9.0-py3-none-any.whl"
+      ],
+      "package": "pooch",
+      "version": "1.9.0"
+    },
+    {
+      "path": "安装包/wheels/protobuf-7.36.2-cp310-abi3-win_amd64.whl",
+      "size": 456514,
+      "sha256": "a300819d441e078a5608c0d3c709796bb548136058fda017ae51d425b44fd353",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/8a/55/b77bda4e5e5f5971fb51b07663694690e9afdb9402136c16a522bd621cad/protobuf-7.36.2-cp310-abi3-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/8a/55/b77bda4e5e5f5971fb51b07663694690e9afdb9402136c16a522bd621cad/protobuf-7.36.2-cp310-abi3-win_amd64.whl"
+      ],
+      "package": "protobuf",
+      "version": "7.36.2"
+    },
+    {
+      "path": "安装包/wheels/psutil-7.2.2-cp37-abi3-win_amd64.whl",
+      "size": 137737,
+      "sha256": "eb7e81434c8d223ec4a219b5fc1c47d0417b12be7ea866e24fb5ad6e84b3d988",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b4/90/e2159492b5426be0c1fef7acba807a03511f97c5f86b3caeda6ad92351a7/psutil-7.2.2-cp37-abi3-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b4/90/e2159492b5426be0c1fef7acba807a03511f97c5f86b3caeda6ad92351a7/psutil-7.2.2-cp37-abi3-win_amd64.whl"
+      ],
+      "package": "psutil",
+      "version": "7.2.2"
+    },
+    {
+      "path": "安装包/wheels/pycparser-3.12-py3-none-any.whl",
+      "size": 62600,
+      "sha256": "a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b6/ae/315bbeee126a769cbde43cf4908acb4b40408d8bf8bbf334dd7368d8dadf/pycparser-3.12-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b6/ae/315bbeee126a769cbde43cf4908acb4b40408d8bf8bbf334dd7368d8dadf/pycparser-3.12-py3-none-any.whl"
+      ],
+      "package": "pycparser",
+      "version": "3.12"
+    },
+    {
+      "path": "安装包/wheels/pydantic-2.14.1-py3-none-any.whl",
+      "size": 488106,
+      "sha256": "9195d967ec791692a04438115466764fb8b9a27b31f14a760437694f40d6b454",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/35/ea/a56b9fe5066f3537b7882f77e9c5dfb26d8c2eefdaed9b5fc73d57b4dc22/pydantic-2.14.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/35/ea/a56b9fe5066f3537b7882f77e9c5dfb26d8c2eefdaed9b5fc73d57b4dc22/pydantic-2.14.1-py3-none-any.whl"
+      ],
+      "package": "pydantic",
+      "version": "2.14.1"
+    },
+    {
+      "path": "安装包/wheels/pydantic_core-2.50.1-cp312-cp312-win_amd64.whl",
+      "size": 2172522,
+      "sha256": "132529c83901437ff642f585216831bf5fd7a91df66829907e155192ead62498",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/c5/17/8bbd530b8659e9d963f5b16f6cb8e159f4cd174b4d6304e48969ab12dba8/pydantic_core-2.50.1-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/c5/17/8bbd530b8659e9d963f5b16f6cb8e159f4cd174b4d6304e48969ab12dba8/pydantic_core-2.50.1-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "pydantic_core",
+      "version": "2.50.1"
+    },
+    {
+      "path": "安装包/wheels/pydub-0.25.1-py2.py3-none-any.whl",
+      "size": 32327,
+      "sha256": "65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl"
+      ],
+      "package": "pydub",
+      "version": "0.25.1"
+    },
+    {
+      "path": "安装包/wheels/pygments-2.21.0-py3-none-any.whl",
+      "size": 1250147,
+      "sha256": "2363c69b61c4a97c838da3b130dcd6468f4848992b21a82f2a63ec34377137d9",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/71/46/17f022dd3e953bf20a04a028a21ec746d942f8d2af30fa0f124fa0e6a684/pygments-2.21.0-py3-none-any.whl"
+      ],
+      "package": "Pygments",
+      "version": "2.21.0"
+    },
+    {
+      "path": "安装包/wheels/pyreadline3-3.5.6-py3-none-any.whl",
+      "size": 85243,
+      "sha256": "8449b734232e42a5dcd74048e39b60db2839a4c38cf3ae2bf7707d58b5389c0d",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/f7/5e/35c856e186b74678c24927847ad9895a51f1bc02a0c6126477a6c6040064/pyreadline3-3.5.6-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/f7/5e/35c856e186b74678c24927847ad9895a51f1bc02a0c6126477a6c6040064/pyreadline3-3.5.6-py3-none-any.whl"
+      ],
+      "package": "pyreadline3",
+      "version": "3.5.6"
+    },
+    {
+      "path": "安装包/wheels/python_dateutil-3.0.0-py2.py3-none-any.whl",
+      "size": 94659,
+      "sha256": "3c79630202e4152c6add678446984236efe4f57e84d8e892aab0637bab82e9fd",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/5a/17/cebee01d1c0c1441174cf0456ddc91b280d79acb65340c05e41d77866ee8/python_dateutil-3.0.0-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/5a/17/cebee01d1c0c1441174cf0456ddc91b280d79acb65340c05e41d77866ee8/python_dateutil-3.0.0-py2.py3-none-any.whl"
+      ],
+      "package": "python-dateutil",
+      "version": "3.0.0"
+    },
+    {
+      "path": "安装包/wheels/python_multipart-0.0.32-py3-none-any.whl",
+      "size": 30042,
+      "sha256": "ff6d3f776f16878c894e52e107296ffc890e913c611b1a4ec6c44e2821fe2e23",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/e1/04/e8135ebd1ad02c56ec633277529b2602ff99ff634be76cdba5744cf554fd/python_multipart-0.0.32-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/e1/04/e8135ebd1ad02c56ec633277529b2602ff99ff634be76cdba5744cf554fd/python_multipart-0.0.32-py3-none-any.whl"
+      ],
+      "package": "python-multipart",
+      "version": "0.0.32"
+    },
+    {
+      "path": "安装包/wheels/pytz-2026.5-py2.py3-none-any.whl",
+      "size": 506342,
+      "sha256": "e658af3757f9e26a9d25dd2aff38335acd92bc9104f890a894b2c1ba28311b03",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/4f/ef/c66110d46fb800dda0bf33164182dfadabe26a90e4476844d502a23dca8e/pytz-2026.5-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/4f/ef/c66110d46fb800dda0bf33164182dfadabe26a90e4476844d502a23dca8e/pytz-2026.5-py2.py3-none-any.whl"
+      ],
+      "package": "pytz",
+      "version": "2026.5"
+    },
+    {
+      "path": "安装包/wheels/pyyaml-6.0.3-cp312-cp312-win_amd64.whl",
+      "size": 154003,
+      "sha256": "5fcd34e47f6e0b794d17de1b4ff496c00986e1c83f7ab2fb8fcfe9616ff7477b",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/86/bf/899e81e4cce32febab4fb42bb97dcdf66bc135272882d1987881a4b519e9/pyyaml-6.0.3-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/86/bf/899e81e4cce32febab4fb42bb97dcdf66bc135272882d1987881a4b519e9/pyyaml-6.0.3-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "path": "安装包/wheels/qwen_tts_hf-0.1.1.post1-py3-none-any.whl",
+      "size": 115212,
+      "sha256": "ed5b7aae64cf795243369fb5226173f459a45689ea86db1c6d3eb14fc0c2c01d",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/ed/14/57e0ba0b84535102e08f33f1e14a2e0975229f5b878290343705727a3a33/qwen_tts_hf-0.1.1.post1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/ed/14/57e0ba0b84535102e08f33f1e14a2e0975229f5b878290343705727a3a33/qwen_tts_hf-0.1.1.post1-py3-none-any.whl"
+      ],
+      "package": "qwen-tts-hf",
+      "version": "0.1.1.post1"
+    },
+    {
+      "path": "安装包/wheels/regex-2026.9.29-cp312-cp312-win_amd64.whl",
+      "size": 280334,
+      "sha256": "fdd88ed5e20b1bcdd234421e454962c971aa44b653bdb7f1ea9ef683e90fb649",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/93/19/489bc8db91196381c935752df01ba3f607140daece33b78d88573f028e64/regex-2026.9.29-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/93/19/489bc8db91196381c935752df01ba3f607140daece33b78d88573f028e64/regex-2026.9.29-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "regex",
+      "version": "2026.9.29"
+    },
+    {
+      "path": "安装包/wheels/requests-2.34.2-py3-none-any.whl",
+      "size": 73075,
+      "sha256": "2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl"
+      ],
+      "package": "requests",
+      "version": "2.34.2"
+    },
+    {
+      "path": "安装包/wheels/rich-15.0.0-py3-none-any.whl",
+      "size": 310654,
+      "sha256": "33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/82/3b/64d4899d73f91ba49a8c18a8ff3f0ea8f1c1d75481760df8c68ef5235bf5/rich-15.0.0-py3-none-any.whl"
+      ],
+      "package": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "path": "安装包/wheels/safehttpx-0.1.7-py3-none-any.whl",
+      "size": 8959,
+      "sha256": "c4f4a162db6993464d7ca3d7cc4af0ffc6515a606dfd220b9f82c6945d869cde",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/2e/a3/0f0b7d78e2f1eb9e8e1afbff1d2bff8d60144aee17aca51c065b516743dd/safehttpx-0.1.7-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/2e/a3/0f0b7d78e2f1eb9e8e1afbff1d2bff8d60144aee17aca51c065b516743dd/safehttpx-0.1.7-py3-none-any.whl"
+      ],
+      "package": "safehttpx",
+      "version": "0.1.7"
+    },
+    {
+      "path": "安装包/wheels/safetensors-0.8.0-cp310-abi3-win_amd64.whl",
+      "size": 355540,
+      "sha256": "096ec1a98435df7beb08853bb5aa9081a84f23d0adc67ed1a0a10550f608373f",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/1b/6d/3fba214c1e5e0f69991677ec3bc17023f0421776975e1de0c682dca475e2/safetensors-0.8.0-cp310-abi3-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/1b/6d/3fba214c1e5e0f69991677ec3bc17023f0421776975e1de0c682dca475e2/safetensors-0.8.0-cp310-abi3-win_amd64.whl"
+      ],
+      "package": "safetensors",
+      "version": "0.8.0"
+    },
+    {
+      "path": "安装包/wheels/scikit_learn-1.9.1-cp312-cp312-win_amd64.whl",
+      "size": 8262238,
+      "sha256": "4b59abb30618121cc46b45972d6bf53a7128b4df4cd346c6ca6f4d5f9031e49c",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/72/8d/27c054166bac671770d1ea0ef7716134fe8119c0df224a58c89fd735a61c/scikit_learn-1.9.1-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/72/8d/27c054166bac671770d1ea0ef7716134fe8119c0df224a58c89fd735a61c/scikit_learn-1.9.1-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "scikit-learn",
+      "version": "1.9.1"
+    },
+    {
+      "path": "安装包/wheels/scipy-1.18.1-cp312-cp312-win_amd64.whl",
+      "size": 36658278,
+      "sha256": "5e4d44984abc0020154ea81b247adeddcc3ac5527b975ff798bd1ba0adc513c2",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/39/e7/979fd14e75008623df31ba70d6bb144700f68feadcea042021c06a05bf82/scipy-1.18.1-cp312-cp312-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/39/e7/979fd14e75008623df31ba70d6bb144700f68feadcea042021c06a05bf82/scipy-1.18.1-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "scipy",
+      "version": "1.18.1"
+    },
+    {
+      "path": "安装包/wheels/semantic_version-2.10.0-py2.py3-none-any.whl",
+      "size": 15552,
+      "sha256": "de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/6a/23/8146aad7d88f4fcb3a6218f41a60f6c2d4e3a72de72da1825dc7c8f7877c/semantic_version-2.10.0-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/6a/23/8146aad7d88f4fcb3a6218f41a60f6c2d4e3a72de72da1825dc7c8f7877c/semantic_version-2.10.0-py2.py3-none-any.whl"
+      ],
+      "package": "semantic-version",
+      "version": "2.10.0"
+    },
+    {
+      "path": "安装包/wheels/setuptools-80.9.0-py3-none-any.whl",
+      "size": 1201486,
+      "sha256": "062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl"
+      ],
+      "package": "setuptools",
+      "version": "80.9.0"
+    },
+    {
+      "path": "安装包/wheels/shellingham-1.5.4-py2.py3-none-any.whl",
+      "size": 9755,
+      "sha256": "7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl"
+      ],
+      "package": "shellingham",
+      "version": "1.5.4"
+    },
+    {
+      "path": "安装包/wheels/six-1.17.0-py2.py3-none-any.whl",
+      "size": 11050,
+      "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl"
+      ],
+      "package": "six",
+      "version": "1.17.0"
+    },
+    {
+      "path": "安装包/wheels/sounddevice-0.5.3-py3-none-win_amd64.whl",
+      "size": 364025,
+      "sha256": "f55ad20082efc2bdec06928e974fbcae07bc6c405409ae1334cefe7d377eb687",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/66/c7/16123d054aef6d445176c9122bfbe73c11087589b2413cab22aff5a7839a/sounddevice-0.5.3-py3-none-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/66/c7/16123d054aef6d445176c9122bfbe73c11087589b2413cab22aff5a7839a/sounddevice-0.5.3-py3-none-win_amd64.whl"
+      ],
+      "package": "sounddevice",
+      "version": "0.5.3"
+    },
+    {
+      "path": "安装包/wheels/soundfile-0.13.1-py2.py3-none-win_amd64.whl",
+      "size": 1019162,
+      "sha256": "1e70a05a0626524a69e9f0f4dd2ec174b4e9567f4d8b6c11d38b5c289be36ee9",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/14/e9/6b761de83277f2f02ded7e7ea6f07828ec78e4b229b80e4ca55dd205b9dc/soundfile-0.13.1-py2.py3-none-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/14/e9/6b761de83277f2f02ded7e7ea6f07828ec78e4b229b80e4ca55dd205b9dc/soundfile-0.13.1-py2.py3-none-win_amd64.whl"
+      ],
+      "package": "soundfile",
+      "version": "0.13.1"
+    },
+    {
+      "path": "安装包/wheels/sox-1.5.0.tar.gz",
+      "size": 63905,
+      "sha256": "12c7be5bb1f548d891fe11e82c08cf5f1a1d74e225298f60082e5aeb2469ada0",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/3d/a2/d8e0d8fd7abf509ead4a2cb0fb24e5758b5330166bf9223d5cb9f98a7e8d/sox-1.5.0.tar.gz",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/3d/a2/d8e0d8fd7abf509ead4a2cb0fb24e5758b5330166bf9223d5cb9f98a7e8d/sox-1.5.0.tar.gz"
+      ],
+      "package": "sox",
+      "version": "1.5.0"
+    },
+    {
+      "path": "安装包/wheels/soxr-1.1.0-cp312-abi3-win_amd64.whl",
+      "size": 174357,
+      "sha256": "6ae2a174bffea94e8ead857dad85999d3f49f091774dbad5b046c0417d7092f4",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/b0/4d/621e4150e4815246ad552d215a8a294a90143fedd19ee442cf82d3b3abc8/soxr-1.1.0-cp312-abi3-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/b0/4d/621e4150e4815246ad552d215a8a294a90143fedd19ee442cf82d3b3abc8/soxr-1.1.0-cp312-abi3-win_amd64.whl"
+      ],
+      "package": "soxr",
+      "version": "1.1.0"
+    },
+    {
+      "path": "安装包/wheels/starlette-0.52.1-py3-none-any.whl",
+      "size": 74272,
+      "sha256": "0029d43eb3d273bc4f83a08720b4912ea4b071087a3b48db01b7c839f7954d74",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/81/0d/13d1d239a25cbfb19e740db83143e95c772a1fe10202dda4b76792b114dd/starlette-0.52.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/81/0d/13d1d239a25cbfb19e740db83143e95c772a1fe10202dda4b76792b114dd/starlette-0.52.1-py3-none-any.whl"
+      ],
+      "package": "starlette",
+      "version": "0.52.1"
+    },
+    {
+      "path": "安装包/wheels/sympy-1.14.0-py3-none-any.whl",
+      "size": 6299353,
+      "sha256": "e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl"
+      ],
+      "package": "sympy",
+      "version": "1.14.0"
+    },
+    {
+      "path": "安装包/wheels/threadpoolctl-3.7.0-py3-none-any.whl",
+      "size": 26362,
+      "sha256": "cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/43/3f/f88a53f60a472b46f4023f56d204dd7de33d34c5d2acbfa0d70a674e639e/threadpoolctl-3.7.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/43/3f/f88a53f60a472b46f4023f56d204dd7de33d34c5d2acbfa0d70a674e639e/threadpoolctl-3.7.0-py3-none-any.whl"
+      ],
+      "package": "threadpoolctl",
+      "version": "3.7.0"
+    },
+    {
+      "path": "安装包/wheels/tokenizers-0.22.2-cp39-abi3-win_amd64.whl",
+      "size": 2747786,
+      "sha256": "c9ea31edff2968b44a88f97d784c2f16dc0729b8b143ed004699ebca91f05c48",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/65/71/0670843133a43d43070abeb1949abfdef12a86d490bea9cd9e18e37c5ff7/tokenizers-0.22.2-cp39-abi3-win_amd64.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/65/71/0670843133a43d43070abeb1949abfdef12a86d490bea9cd9e18e37c5ff7/tokenizers-0.22.2-cp39-abi3-win_amd64.whl"
+      ],
+      "package": "tokenizers",
+      "version": "0.22.2"
+    },
+    {
+      "path": "安装包/wheels/tomlkit-0.13.3-py3-none-any.whl",
+      "size": 38901,
+      "sha256": "c89c649d79ee40629a9fda55f8ace8c6a1b42deb912b2a8fd8d942ddadb606b0",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/bd/75/8539d011f6be8e29f339c42e633aae3cb73bffa95dd0f9adec09b9c58e85/tomlkit-0.13.3-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/bd/75/8539d011f6be8e29f339c42e633aae3cb73bffa95dd0f9adec09b9c58e85/tomlkit-0.13.3-py3-none-any.whl"
+      ],
+      "package": "tomlkit",
+      "version": "0.13.3"
+    },
+    {
+      "path": "安装包/wheels/torch-2.7.1+cu128-cp312-cp312-win_amd64.whl",
+      "size": 3273024349,
+      "sha256": "2bb8c05d48ba815b316879a18195d53a6472a03e297d971e916753f8e1053d30",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.nju.edu.cn/pytorch/whl/cu128/torch-2.7.1%2Bcu128-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "torch",
+      "version": "2.7.1+cu128"
+    },
+    {
+      "path": "安装包/wheels/torchaudio-2.7.1+cu128-cp312-cp312-win_amd64.whl",
+      "size": 4655660,
+      "sha256": "4586e3106701b06a4f9377f5c1da9e1d8555e16bd58fd7d810aa3f6cf50bd713",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.nju.edu.cn/pytorch/whl/cu128/torchaudio-2.7.1%2Bcu128-cp312-cp312-win_amd64.whl"
+      ],
+      "package": "torchaudio",
+      "version": "2.7.1+cu128"
+    },
+    {
+      "path": "安装包/wheels/tqdm-4.70.1-py3-none-any.whl",
+      "size": 80199,
+      "sha256": "c293e525e6fef9c20e8728fd4612df02a0aa31bb5fe91ecd93e123b1b7bffa73",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl"
+      ],
+      "package": "tqdm",
+      "version": "4.70.1"
+    },
+    {
+      "path": "安装包/wheels/transformers-5.15.1-py3-none-any.whl",
+      "size": 11749582,
+      "sha256": "b7cdf238ff583e3a58dbc7fa34da1aaf091ce063141f65a30538160bd5afe93f",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/41/c4/a12e1d9b387fb0c40a57116db82b457e8c771cb419163cda29204d74a595/transformers-5.15.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/41/c4/a12e1d9b387fb0c40a57116db82b457e8c771cb419163cda29204d74a595/transformers-5.15.1-py3-none-any.whl"
+      ],
+      "package": "transformers",
+      "version": "5.15.1"
+    },
+    {
+      "path": "安装包/wheels/typer-0.27.3-py3-none-any.whl",
+      "size": 123312,
+      "sha256": "e50022f28b82a86313e54501317a1db64bf8f8d036ff8cfe5ca7e47675454aff",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/07/ea/2e31b67051e91a133189e9c000c222502ddc6969856416de0d095de4c0b0/typer-0.27.3-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/07/ea/2e31b67051e91a133189e9c000c222502ddc6969856416de0d095de4c0b0/typer-0.27.3-py3-none-any.whl"
+      ],
+      "package": "typer",
+      "version": "0.27.3"
+    },
+    {
+      "path": "安装包/wheels/typing_extensions-4.16.0-py3-none-any.whl",
+      "size": 45571,
+      "sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl"
+      ],
+      "package": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "path": "安装包/wheels/typing_inspection-0.4.4-py3-none-any.whl",
+      "size": 14750,
+      "sha256": "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl"
+      ],
+      "package": "typing-inspection",
+      "version": "0.4.4"
+    },
+    {
+      "path": "安装包/wheels/tzdata-2026.5-py2.py3-none-any.whl",
+      "size": 347996,
+      "sha256": "b683bd1b6659ddcd810ff02ad09ba821d4bf1065072805063eb35c49617905ac",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/94/21/1e5995a1c920cce14e4bffae20c665ec10e7ed03ab25e006cd741092b718/tzdata-2026.5-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/94/21/1e5995a1c920cce14e4bffae20c665ec10e7ed03ab25e006cd741092b718/tzdata-2026.5-py2.py3-none-any.whl"
+      ],
+      "package": "tzdata",
+      "version": "2026.5"
+    },
+    {
+      "path": "安装包/wheels/urllib3-2.8.0-py3-none-any.whl",
+      "size": 135717,
+      "sha256": "0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl"
+      ],
+      "package": "urllib3",
+      "version": "2.8.0"
+    },
+    {
+      "path": "安装包/wheels/uvicorn-0.54.0-py3-none-any.whl",
+      "size": 87427,
+      "sha256": "505bdb0f318731d45f1f712071fc781a8981f6847a31c902c9f5e652d4f67faf",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/38/0c/b54a4fdd7f90a3af8b02ebc9ce6712c2c208b7926a2f7bad95c33ebbe943/uvicorn-0.54.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/38/0c/b54a4fdd7f90a3af8b02ebc9ce6712c2c208b7926a2f7bad95c33ebbe943/uvicorn-0.54.0-py3-none-any.whl"
+      ],
+      "package": "uvicorn",
+      "version": "0.54.0"
+    },
+    {
+      "path": "安装包/wheels/wheel-0.45.1-py3-none-any.whl",
+      "size": 72494,
+      "sha256": "708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248",
+      "group": "运行依赖",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl"
+      ],
+      "package": "wheel",
+      "version": "0.45.1"
+    },
+    {
+      "path": "安装包/wheels/customtkinter-5.2.2-py3-none-any.whl",
+      "size": 296062,
+      "sha256": "14ad3e7cd3cb3b9eb642b9d4e8711ae80d3f79fb82545ad11258eeffb2e6b37c",
+      "group": "运行环境",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/3b/b1/b43b33001a77256b335511e75f257d001082350b8506c8807f30c98db052/customtkinter-5.2.2-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/3b/b1/b43b33001a77256b335511e75f257d001082350b8506c8807f30c98db052/customtkinter-5.2.2-py3-none-any.whl"
+      ]
+    },
+    {
+      "path": "安装包/wheels/darkdetect-0.8.0-py3-none-any.whl",
+      "size": 8955,
+      "sha256": "a7509ccf517eaad92b31c214f593dbcf138ea8a43b2935406bbd565e15527a85",
+      "group": "运行环境",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/f2/f2/728f041460f1b9739b85ee23b45fa5a505962ea11fd85bdbe2a02b021373/darkdetect-0.8.0-py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/f2/f2/728f041460f1b9739b85ee23b45fa5a505962ea11fd85bdbe2a02b021373/darkdetect-0.8.0-py3-none-any.whl"
+      ]
+    },
+    {
+      "path": "安装包/wheels/audiotsm-0.1.2-py2.py3-none-any.whl",
+      "size": 32172,
+      "sha256": "f6041b2a38326d1449ca84218c258c54ee126868fe864e12a17e425365ec93be",
+      "group": "运行环境",
+      "urls": [
+        "https://mirrors.aliyun.com/pypi/packages/9c/7d/a214ff529fed9501452252d24231f54ab5afe8691b4f81e5d07d204070b4/audiotsm-0.1.2-py2.py3-none-any.whl",
+        "https://mirrors.huaweicloud.com/repository/pypi/packages/9c/7d/a214ff529fed9501452252d24231f54ab5afe8691b4f81e5d07d204070b4/audiotsm-0.1.2-py2.py3-none-any.whl"
+      ]
+    }
+  ]
+}

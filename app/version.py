@@ -1,0 +1,5 @@
+"""Public identity, independent of the selected speech model."""
+APP_NAME = "聆笺 JianVox"
+APP_SLUG = "JianVox"
+REPOSITORY = "jianvox-offline-tts"
+VERSION = "0.5.0"
