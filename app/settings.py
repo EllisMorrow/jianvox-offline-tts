@@ -22,12 +22,24 @@ def write_json(path, value):
     os.replace(temp, path)
 
 
+def resolve_install_path(value, project=PROJECT):
+    if not isinstance(value, str) or not value.strip() or "\0" in value:
+        raise ValueError("安装路径无效，请重新配置本地安装位置。")
+    path = Path(value)
+    return (path if path.is_absolute() else Path(project) / path).resolve()
+
+
+def stored_install_path(path, project=PROJECT):
+    path, project = Path(path).resolve(), Path(project).resolve()
+    return path.relative_to(project).as_posix() if path.is_relative_to(project) else str(path)
+
+
 def model_directory():
     install = LOCAL / "install.json"
     if install.exists():
         data = json.loads(install.read_text(encoding="utf-8-sig"))
         if data.get("model_path"):
-            return Path(data["model_path"])
+            return resolve_install_path(data["model_path"])
     return PROJECT / ".downloads" / "模型" / "Qwen3-TTS-12Hz-1.7B-CustomVoice"
 
 

@@ -6,6 +6,12 @@ $taskDownloads = Join-Path $taskProject '.downloads'
 $taskManifestPath = Join-Path $PSScriptRoot 'download_manifest.json'
 $taskManifest = Get-Content -LiteralPath $taskManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
+function Resolve-ReaderPath([string]$Value) {
+    if ([string]::IsNullOrWhiteSpace($Value)) { return $null }
+    if ([IO.Path]::IsPathRooted($Value)) { return [IO.Path]::GetFullPath($Value) }
+    return [IO.Path]::GetFullPath((Join-Path $taskProject $Value))
+}
+
 function Test-ReaderPython([string]$Candidate) {
     if (-not $Candidate -or -not (Test-Path -LiteralPath $Candidate -PathType Leaf)) { return $false }
     $taskVersion = & $Candidate -c "import sys,struct,tkinter; print('OK' if sys.version_info[:2]==(3,12) and struct.calcsize('P')==8 else 'NO')" 2>$null
@@ -16,10 +22,14 @@ function Get-ConfiguredPython {
     $taskConfig = Join-Path $taskLocal 'install.json'
     if (Test-Path -LiteralPath $taskConfig) {
         $taskInstall = Get-Content -LiteralPath $taskConfig -Raw -Encoding UTF8 | ConvertFrom-Json
-        if (Test-ReaderPython $taskInstall.runtime_python) { return $taskInstall.runtime_python }
+        $taskConfigured = Resolve-ReaderPath $taskInstall.runtime_python
+        if (Test-ReaderPython $taskConfigured) { return $taskConfigured }
     }
-    $taskOwnRuntime = Join-Path $taskProject '.runtime\Scripts\python.exe'
-    if (Test-ReaderPython $taskOwnRuntime) { return $taskOwnRuntime }
+    # Keep both the venv layout and an already installed full Python runtime reusable.
+    foreach ($taskRelative in @('.runtime\Scripts\python.exe', '.runtime\python.exe', 'runtime\python.exe')) {
+        $taskOwnRuntime = Join-Path $taskProject $taskRelative
+        if (Test-ReaderPython $taskOwnRuntime) { return $taskOwnRuntime }
+    }
     return $null
 }
 
@@ -95,7 +105,7 @@ try {
     $taskConfig = Join-Path $taskLocal 'install.json'
     if (Test-Path -LiteralPath $taskConfig) {
         $taskInstall = Get-Content -LiteralPath $taskConfig -Raw -Encoding UTF8 | ConvertFrom-Json
-        if ($taskInstall.downloads_path) { $taskDownloads = $taskInstall.downloads_path }
+        if ($taskInstall.downloads_path) { $taskDownloads = Resolve-ReaderPath $taskInstall.downloads_path }
     }
     if ($Mode -eq 'Prepare') {
         if (-not [Environment]::Is64BitOperatingSystem) { throw '64-bit Windows is required.' }

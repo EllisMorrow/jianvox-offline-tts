@@ -4,7 +4,7 @@
 [![Windows checks](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml/badge.svg)](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**当前版本：v0.5.0 · Windows x64 · 中文优先 · NVIDIA GPU · 本地运行**
+**当前版本：v0.5.1 · Windows x64 · 中文优先 · NVIDIA GPU · 本地运行**
 
 Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播放；也支持把长文本导出为 MP3。Jian 取“笺”的拼音，Vox 意为声音；名称不绑定某个模型。
 
@@ -30,7 +30,7 @@ Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播
 
 ## 新电脑使用
 
-1. 从 [Releases](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载 `JianVox-v0.5.0-windows-source.zip`，解压到长期保留、可写入的本地目录。
+1. 从 [Releases](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载 `JianVox-v0.5.1-windows-source.zip`，解压到长期保留、可写入的本地目录。
 2. 连接适合下载大文件的网络，双击 **`开始下载.cmd`**。
 3. 等待全部下载并校验完成，关闭下载器窗口，脚本会继续离线安装依赖、创建桌面快捷方式并启动助手。
 4. 窗口显示“已就绪”后即可使用。
@@ -87,14 +87,16 @@ Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播
 | `scripts/` | 下载/安装脚本、版本和校验清单 | 是 |
 | `tests/`、`docs/`、说明及许可 | 开发验证与文档 | 是 |
 | `.downloads/` | 模型及安装包 | 否 |
-| `.python/`、`.runtime/` | 机器上的运行环境 | 否 |
+| `.python/`、`.runtime/`、`runtime/` | 机器上的运行环境，含复用的完整 Python 安装 | 否 |
 | `.local/` | 本机安装位置配置 | 否 |
 | Windows 用户设置目录 | 个人偏好 | 否 |
 | `dist/` | 本地构建的源码 ZIP | 否 |
 
 打包脚本只按允许的目录和文件类型收集发布文件，并检查越界路径、二进制类型和敏感路径/凭证模式。模型、环境、个人设置、生成音频、日志、安装报告及缓存均不进入源码包。
 
-移动已安装的虚拟环境不保证可用。迁移到另一设备应重新执行准备脚本。高级用户可通过本机 `.local/install.json` 的 `runtime_python`、`model_path`、`downloads_path` 指向已有文件；这些本机绝对路径不应上传。
+高级用户可通过本机 `.local/install.json` 的 `runtime_python`、`model_path`、`downloads_path` 复用已有文件。程序根目录内使用相对路径，外部目录也兼容绝对路径；配置不依赖启动时的工作目录，且不进入发布包。
+
+已安装的 Python 或虚拟环境并非任意移动后都保证可用：其控制台入口、注册信息和快捷方式可能需要修正。整合本机目录应先验证已有文件、更新引用并做实际运行检查，不能仅修改配置就视为迁移完成。迁移到另一设备仍应执行准备脚本。
 
 本项目没有自动建仓库、上传、推送或发布的功能。下载脚本只接收公开依赖，不会回传用户数据。
 

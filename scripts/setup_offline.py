@@ -7,6 +7,8 @@ import sys
 from download_tts import digest, load_manifest, target_path, write_json_atomic
 
 PROJECT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT / "app"))
+from settings import stored_install_path
 
 
 def verify_payload(root, manifest):
@@ -53,8 +55,9 @@ def main():
     model = args.downloads.resolve() / "模型" / "Qwen3-TTS-12Hz-1.7B-CustomVoice"
     (PROJECT / ".local").mkdir(exist_ok=True)
     write_json_atomic(PROJECT / ".local" / "install.json",
-                      {"runtime_python": sys.executable, "model_path": str(model),
-                       "downloads_path": str(args.downloads.resolve())})
+                      {"runtime_python": stored_install_path(sys.executable),
+                       "model_path": stored_install_path(model),
+                       "downloads_path": stored_install_path(args.downloads)})
     print("OFFLINE_SETUP_PASSED", flush=True)
 
 
