@@ -296,7 +296,7 @@ class ReaderUI:
             slider.pack(fill="x", pady=(1, 3))
             setattr(app, attribute, slider)
         self.volume_tooltip = Tooltip(app.volume_slider,
-            "音量 0–150%，朗读时即时生效；导出使用开始时的音量。\n100% 为原始音量，超过 100% 放大较小的声音，并柔和限制高峰。\n增益不等于等比例增加听感；声音本来很大时可调低。")
+            "音量 0–150%，朗读和导出后续片段即时生效。\n100% 为原始音量，150% 最高约 +9 dB，并柔和限制高峰。\n导出中调整不会重写之前片段；整份音量一致请在导出前设定。\n声音本来很大时可调低，增益不保证完全无失真。")
         self.voice_tooltip = Tooltip(app.voice_menu, "声音与语速在下次朗读生效；音量可即时调整。")
 
     def build_hotkeys(self, parent):
@@ -380,7 +380,7 @@ class ReaderUI:
         privacy = self.card(panel)
         privacy.grid(row=3, column=0, sticky="ew", pady=(0, 5))
         self.label(privacy, "隐私与设置文件", 14, True).pack(anchor="w", padx=18, pady=(16, 8))
-        self.label(privacy, "仅保存必要偏好，不保留正文、朗读历史或使用统计。\nWindows 剪贴板历史及其他软件记录不在清理范围内。",
+        self.label(privacy, "正文仅在内存中保留，手动清空或退出时删除。\n不保存正文、朗读历史或使用统计到磁盘。\nWindows 剪贴板历史及其他软件记录不在清理范围内。",
                    11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 12))
         self.button(privacy, "打开设置文件夹", app.open_settings_folder, width=150, height=34).pack(anchor="w", padx=18, pady=(0, 16))
         recovery = self.card(panel)

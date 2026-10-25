@@ -57,7 +57,6 @@ class App:
         self.copy_lock = threading.Lock()
         self.hotkeys, self.metrics = {}, {}
         self.save_timer = None
-        self.editor_request = None
         self.exporting = False
         self.export_id = None
         self.export_summary = "正在估算剩余时间"
@@ -116,14 +115,7 @@ class App:
     def clear_text(self):
         self.text.delete("1.0", "end")
         self.text.edit_reset()
-        self.editor_request = None
         self.update_counter()
-
-    def clear_completed_text(self, number):
-        if self.editor_request and self.editor_request[0] == number:
-            if self.text.get("1.0", "end").strip() == self.editor_request[1]:
-                self.clear_text()
-            self.editor_request = None
 
     def choose_directory(self):
         value = filedialog.askdirectory(parent=self.root, title="选择 MP3 保存目录",
@@ -178,7 +170,6 @@ class App:
             self.export_chapters_saved = 0
             self.export_chaptered = self.export_mode.get() == "分章 MP3"
             self.export_error = None
-            self.editor_request = (number, text)
             self.preferences.export_directory = str(Path(target).parent)
             self.export_directory.set(self.preferences.export_directory)
             self.persist()
@@ -368,8 +359,6 @@ class App:
             number = self.reader.submit(text, self.preferences.voice, self.preferences.style,
                                         started, self.preferences.speed)
             self.metrics = {"request": number, "characters": len(text.strip()), "speed": self.preferences.speed}
-            if text.strip() == self.text.get("1.0", "end").strip():
-                self.editor_request = (number, text.strip())
             self.pause_button.configure(text="暂停")
             self.status.set("正在生成声音…")
             return number
@@ -566,7 +555,6 @@ class App:
                     self.status.set("朗读完成，随时可以继续。")
                     self.dot.configure(text_color=SUCCESS_COLOR)
                     self.pause_button.configure(text="暂停")
-                    self.clear_completed_text(data[0])
                 elif kind == "export_progress" and data[0] == self.export_id:
                     _, done, total, eta = data
                     self.export_progress.set(done / total)
@@ -590,13 +578,11 @@ class App:
                         if kind == "export_done":
                             self.status.set(f"已保存 {self.export_chapters_saved} 个分章 MP3。" if self.export_chaptered else
                                             "MP3 已保存到你选择的位置。")
-                            self.clear_completed_text(number)
                         elif self.export_error:
                             self.show_error(self.export_error)
                         else:
                             self.status.set(f"导出已取消，已完成的 {self.export_chapters_saved} 个分章文件已保留。" if self.export_chapters_saved else
                                             "导出已取消，临时音频已清理。")
-                        self.editor_request = None
                 elif kind == "audio_warning":
                     logging.warning(data)
         except queue.Empty:

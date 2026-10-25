@@ -80,7 +80,6 @@ class Request:
     started: float
     speed: float = 1.0
     output: Path | None = None
-    volume: float = .85
     probe: bool = False
     plan: ExportPlan | None = None
 
@@ -126,6 +125,10 @@ class AudioBuffer:
     def set_volume(self, volume):
         with self.lock:
             self.volume = min(1.5, max(0.0, float(volume)))
+
+    def get_volume(self):
+        with self.lock:
+            return self.volume
 
     def put(self, number, wave):
         with self.lock:
@@ -221,7 +224,7 @@ class Reader:
                 raise ValueError("声音仍在准备中，请等待窗口显示“已就绪”。")
             self.number += 1
             request = Request(self.number, parts, speaker, style, started or time.perf_counter(), speed,
-                              Path(output) if output else None, self.audio.volume, plan=plan)
+                              Path(output) if output else None, plan=plan)
             if output:
                 self.export_number = request.number
             self.audio.begin(request.number, request.started, active=not output)
@@ -375,7 +378,7 @@ class Reader:
                     wave = tempo.process(wave)
                     if len(wave):
                         if writer:
-                            writer.write(apply_volume(wave, request.volume))
+                            writer.write(apply_volume(wave, self.audio.get_volume()))
                             now = time.perf_counter()
                             if now - last_activity >= .5:
                                 self.events.put(("export_activity", (
@@ -396,7 +399,7 @@ class Reader:
                 tail = tempo.process(np.empty(0, dtype=np.float32), final=True)
                 if len(tail):
                     if writer:
-                        writer.write(apply_volume(tail, request.volume))
+                        writer.write(apply_volume(tail, self.audio.get_volume()))
                     else:
                         self.audio.put(request.number, tail)
                 completed += len(part)

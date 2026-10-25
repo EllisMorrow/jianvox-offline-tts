@@ -1,6 +1,7 @@
 """Build actual widgets without loading the GPU model. Run separately on Windows."""
 import sys
 import time
+import queue
 from unittest.mock import patch, Mock
 from types import SimpleNamespace
 import tempfile
@@ -9,6 +10,7 @@ import customtkinter as ctk
 from reader_app import App
 from settings import Preferences
 from reader_ui import PANEL
+from reader_core import AudioBuffer
 
 stdout, stderr = sys.stdout, sys.stderr
 with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts"), patch("reader_app.Preferences.load", return_value=Preferences()):
@@ -38,14 +40,20 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
         assert len(app.key_entries) == 3
         with patch.object(app, "persist"):
             assert app.volume_slider.cget("to") == 1.5
-            app.volume_slider.set(1.5)
-            app.playback_changed()
+            app.reader = SimpleNamespace(audio=AudioBuffer(queue.Queue()))
+            # Exercise the real slider callback rather than manually invoking
+            # playback_changed: live gain must work before preferences save.
+            app.volume_slider._clicked(SimpleNamespace(
+                x=app.volume_slider._apply_widget_scaling(app.volume_slider._current_width), y=1))
+            assert app.reader.audio.get_volume() == 1.5
+            assert app.preferences.volume == .85
             app.save_playback()
             assert app.volume.get() == 1.5 and app.volume_text.get() == "150%"
             assert app.preferences.volume == 1.5
             app.volume_slider.set(.85)
             app.playback_changed()
             app.save_playback()
+            app.reader = None
         app.default_keys()
         assert app.key_entries["read"].get() == "F4"
         original_editor = app.text
@@ -89,8 +97,20 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
             assert app.priority_hotkeys.get(), "Failed change did not restore the effective mode"
             app.native = None
         with tempfile.TemporaryDirectory() as tmp, patch.object(app, "persist"), patch("reader_app.filedialog.asksaveasfilename", return_value=str(Path(tmp)/"test.mp3")):
-            app.text.insert("1.0", "这是窗口导出流程的测试文字。")
+            source = "  这是窗口朗读与导出流程的测试文字。\nKeep the text.\n\n"
+            app.text.insert("1.0", source)
             app.reader = SimpleNamespace(ready=True, number=1, submit=Mock(return_value=1))
+            app.read_button.invoke()
+            app.events.put(("played", (1, 0)))
+            app.poll()
+            assert app.text.get("1.0", "end-1c") == source, "Reading cleared or changed editor text"
+            app.native = Mock()
+            app.hide()
+            app.root.update()
+            assert app.text.get("1.0", "end-1c") == source, "Hiding to tray cleared editor text"
+            app.native = None
+            app.show()
+            app.root.update()
             app.export_mp3()
             assert app.exporting and app.export_button.cget("state") == "disabled"
             app.events.put(("export_progress", (1, 50, 100, 5)))
@@ -98,7 +118,9 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
             assert "50%" in app.status.get()
             app.events.put(("export_done", (1, str(Path(tmp)/"test.mp3"))))
             app.poll()
-            assert not app.exporting and not app.text.get("1.0", "end").strip()
+            assert not app.exporting and app.text.get("1.0", "end-1c") == source, "Export cleared or changed editor text"
+            app.clear_button.invoke()
+            assert not app.text.get("1.0", "end").strip(), "Explicit clear did not empty the editor"
             app.text.insert("1.0", "这是公开的预估流程测试。" * 10)
             app.reader = SimpleNamespace(ready=True, number=10, running_number=None, pending=None,
                 audio=SimpleNamespace(active=False), probe=Mock(return_value=10))
@@ -124,6 +146,9 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
                 assert not app.estimating and result.call_count == 2
                 app.reader.probe.assert_called_once()
             app.reader = None
+        with patch.object(app, "persist"), patch.object(app, "finish_exit"):
+            app.exit()
+            assert not app.text.get("1.0", "end").strip(), "Actual exit did not clear editor text"
     app.root.destroy()
 sys.stdout, sys.stderr = stdout, stderr
 print("UI_BUILD_CHECK_PASSED")

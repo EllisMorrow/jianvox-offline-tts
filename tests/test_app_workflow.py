@@ -34,13 +34,12 @@ class WorkflowTests(unittest.TestCase):
         app.export_chapters_saved = 0
         app.export_chaptered = False
         app.export_error = None
-        app.editor_request = None
+        app.text = Mock()
         app.ui = Mock()
         app.dot = Mock()
         app.diagnostic_text = Mock()
         app.last_issue = None
         app.show = Mock()
-        app.clear_completed_text = Mock()
         app.show_error = Mock()
         return app
 
@@ -233,13 +232,12 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(app.export_chapters_saved, 2)
         self.assertTrue(app.exporting)
         self.assertEqual(app.export_id, 8)
-        app.clear_completed_text.assert_not_called()
+        app.text.delete.assert_not_called()
         app.export_button.configure.assert_not_called()
 
     def test_cancel_after_saved_chapter_stops_continuing_message_and_preserves_input(self):
         app = self.app()
         app.exporting, app.export_chaptered, app.export_id = True, True, 8
-        app.editor_request = (8, "需要保留在窗口供重试的文字。")
         app.events.put(("chapter_saved", (8, 1, 3)))
         app.events.put(("export_cancelled", 8))
         app.poll()
@@ -249,7 +247,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("1", app.status.get())
         self.assertIn("已保留", app.status.get())
         self.assertNotIn("正在继续", app.status.get())
-        app.clear_completed_text.assert_not_called()
+        app.text.delete.assert_not_called()
 
     def test_export_failure_retains_error_and_completed_chapter_count(self):
         app = self.app()
@@ -262,7 +260,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertFalse(app.exporting)
         self.assertIn("磁盘空间不足", app.status.get())
         self.assertIn("已保留", app.status.get())
-        app.clear_completed_text.assert_not_called()
+        app.text.delete.assert_not_called()
 
     def test_old_error_does_not_override_a_later_normal_export_cancel(self):
         app = self.app()
@@ -275,7 +273,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("已保留", app.status.get())
         self.assertNotIn("空间不足", app.status.get())
 
-    def test_chapter_export_done_reports_final_count_and_clears_completed_input(self):
+    def test_chapter_export_done_reports_final_count_and_preserves_input(self):
         app = self.app()
         app.exporting, app.export_chaptered, app.export_id = True, True, 8
         app.events.put(("chapter_saved", (8, 3, 3)))
@@ -283,7 +281,7 @@ class WorkflowTests(unittest.TestCase):
         app.poll()
         self.assertFalse(app.exporting)
         self.assertIn("3 个分章 MP3", app.status.get())
-        app.clear_completed_text.assert_called_once_with(8)
+        app.text.delete.assert_not_called()
 
     def test_stale_chapter_events_do_not_finish_a_new_export(self):
         app = self.app()
@@ -295,7 +293,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(app.exporting)
         self.assertEqual(app.export_id, 9)
         self.assertEqual(app.export_chapters_saved, 0)
-        app.clear_completed_text.assert_not_called()
+        app.text.delete.assert_not_called()
 
 
 if __name__ == "__main__":
