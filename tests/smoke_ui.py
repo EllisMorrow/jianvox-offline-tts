@@ -17,6 +17,19 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
     app.root.update()
     if hidden:
         assert not app.root.winfo_viewable(), "Tray startup revealed the main window"
+        app.background_start = False  # Previously opened, then hidden by the user.
+        app.reader = SimpleNamespace(ready=False, number=3, stop=Mock(), toggle_pause=Mock(return_value=None))
+        for event in [("read_selection", time.perf_counter()), ("copy_error", ("模拟复制失败", 3)),
+                      ("pause", None), ("stop", None), ("error", "模拟后台错误")]:
+            app.events.put(event)
+            app.poll()
+            app.root.update()
+            assert not app.root.winfo_viewable(), f"Background shortcut revealed the main window: {event[0]}"
+        app.events.put(("show", None))
+        app.poll()
+        app.root.update()
+        assert app.root.winfo_viewable(), "Explicit tray show action no longer works"
+        app.reader = None
     else:
         app.show()
         app.root.update()

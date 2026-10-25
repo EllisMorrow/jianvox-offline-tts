@@ -376,10 +376,9 @@ class App:
             self.status.set("当前没有正在朗读的内容。")
 
     def show_error(self, text):
+        # Hotkey and worker errors must not change visibility or steal focus.
         self.status.set(text)
         self.dot.configure(text_color=ERROR_COLOR)
-        if not self.background_start:
-            self.show()
 
     def show(self):
         self.background_start = False

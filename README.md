@@ -4,7 +4,7 @@
 [![Windows checks](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml/badge.svg)](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**当前版本：v0.6.1 · Windows x64 · 中文优先 · NVIDIA GPU · 本地运行**
+**当前版本：v0.6.2 · Windows x64 · 中文优先 · NVIDIA GPU · 本地运行**
 
 Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播放；也支持把长文本导出为 MP3。Jian 取“笺”的拼音，Vox 意为声音；名称不绑定某个模型。
 
@@ -32,7 +32,7 @@ Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播
 
 ## 新电脑使用
 
-1. 从 [Releases](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载 `JianVox-v0.6.1-windows-source.zip`，解压到长期保留、可写入的本地目录。
+1. 从 [Releases](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载 `JianVox-v0.6.2-windows-source.zip`，解压到长期保留、可写入的本地目录。
 2. 连接适合下载大文件的网络，双击 **`开始下载.cmd`**。
 3. 等待全部下载并校验完成，关闭下载器窗口，脚本会继续离线安装依赖、创建桌面快捷方式并启动助手。
 4. 窗口显示“已就绪”后即可使用。
@@ -81,6 +81,8 @@ Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播
 ## 使用限制
 
 快捷键默认使用 Windows 普通注册方式。遇到占用时，可在“快捷键”页勾选 **“优先接管已占用快捷键”**，再点击“保存快捷键”。开启后，本程序优先处理设定的组合，其他程序暂时收不到这些组合；未设置的按键正常通过。留空可停用单个操作，退出程序会解除接管。
+
+窗口隐藏时，快捷键朗读、停止、暂停均不唤出主界面；复制失败或模型尚未就绪也只更新状态，不抢占当前窗口。需要查看状态或调整设置时，可通过托盘或桌面快捷方式主动打开主界面。
 
 关闭优先接管时若仍有注册冲突，会提示并恢复原模式；可先换键、清空对应设置或解除其他软件占用后再保存。系统保留操作、安全桌面、权限差异以及其他键盘拦截工具不保证可覆盖；本程序不自动提权，也不关闭或修改其他软件。接管回调只匹配按键并投递操作，不运行模型或读写文件，不保存按键历史。
 

@@ -101,6 +101,16 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(app.events.qsize(), 200)
         app.root.after.assert_called_once()
 
+    def test_background_error_reports_status_without_revealing_window(self):
+        app = self.app()
+        del app.show_error
+        app.dot = Mock()
+        app.show = Mock()
+        app.background_start = False  # Includes a window hidden after ordinary launch.
+        app.show_error("本次复制未完成。")
+        app.status.set.assert_called_once_with("本次复制未完成。")
+        app.show.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,4 +2,4 @@
 APP_NAME = "聆笺 JianVox"
 APP_SLUG = "JianVox"
 REPOSITORY = "jianvox-offline-tts"
-VERSION = "0.6.1"
+VERSION = "0.6.2"
