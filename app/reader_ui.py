@@ -238,18 +238,25 @@ class ReaderUI:
         app.stop_button.pack(side="left", padx=(0, 8))
         app.clipboard_button = self.button(self.playback_actions, "朗读剪贴板", app.read_clipboard, width=106)
         app.clipboard_button.pack(side="left")
+        app.export_mode_menu = ctk.CTkOptionMenu(self.export_actions, variable=app.export_mode,
+            values=["单个 MP3", "分章 MP3"], command=app.change_export_mode, width=104, height=36,
+            fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER,
+            text_color=INK, text_color_disabled=DISABLED, dropdown_fg_color=PANEL,
+            dropdown_text_color=INK, dropdown_hover_color=SELECTED,
+            font=self.font(11), dropdown_font=self.font(12))
+        app.export_mode_menu.pack(side="left", padx=(0, 8))
         app.export_button = self.button(self.export_actions, "导出 MP3", app.export_mp3, width=100)
         app.export_button.pack(side="left", padx=(0, 8))
         app.estimate_button = self.button(self.export_actions, "导出MP3时间预估", app.estimate_export_time, width=150)
         app.estimate_button.pack(side="left")
         self.export_tooltip = Tooltip(app.export_button,
-            "普通朗读最多 20000 字。\nMP3 导出最多 100 万字，自动分段生成。\n长任务耗时较长，可先预估导出时间；点击停止可取消。")
+            "普通朗读最多 20000 字，MP3 导出最多 100 万字。\n单个 MP3：全部完成后保存，取消或失败需重来。\n分章 MP3：约 3000 字/文件，按顺序编号；已完成的文件保留。\n分章不自动识别文章标题，不保存正文或断点记录。")
         app.action_bar.bind("<Configure>", self.layout_toolbar)
         self.layout_toolbar()
 
     def layout_toolbar(self, _event=None):
         width = self.app.action_bar._reverse_widget_scaling(self.app.action_bar.winfo_width())
-        mode = "wide" if width >= 660 else "stacked"
+        mode = "wide" if width >= 800 else "stacked"
         if mode == self._toolbar_mode:
             return
         self._toolbar_mode = mode
@@ -374,3 +381,16 @@ class ReaderUI:
         self.label(privacy, "仅保存必要偏好，不保留正文、朗读历史或使用统计。\nWindows 剪贴板历史及其他软件记录不在清理范围内。",
                    11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 12))
         self.button(privacy, "打开设置文件夹", app.open_settings_folder, width=150, height=34).pack(anchor="w", padx=18, pady=(0, 16))
+        recovery = self.card(panel)
+        recovery.grid(row=4, column=0, sticky="ew", pady=(10, 5))
+        self.label(recovery, "恢复与诊断", 14, True).pack(anchor="w", padx=18, pady=(16, 8))
+        self.label(recovery, "声音异常时可重新加载模型；请先停止当前任务。\n默认播放设备切换后自动重新连接，无设备时仍可导出 MP3。",
+                   11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 10))
+        self.label(recovery, textvariable=app.diagnostic_text, size=11, color=MUTED,
+                   justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 12))
+        actions = ctk.CTkFrame(recovery, fg_color="transparent")
+        actions.pack(anchor="w", padx=18, pady=(0, 16))
+        app.recovery_button = self.button(actions, "重新加载声音", app.reload_model, width=125, height=34)
+        app.recovery_button.pack(side="left")
+        app.diagnostic_button = self.button(actions, "复制诊断摘要", app.copy_diagnostics, width=125, height=34)
+        app.diagnostic_button.pack(side="left", padx=(10, 0))

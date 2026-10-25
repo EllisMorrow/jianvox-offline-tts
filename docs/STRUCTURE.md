@@ -4,10 +4,14 @@
 
 - `app/reader_app.py`：应用生命周期、任务协调与用户操作。
 - `app/reader_ui.py`：页面、组件样式和布局；不加载模型、不读写个人文件。
-- `app/reader_core.py`：单个模型工作线程、流式生成、播放与导出调度。
+- `app/reader_core.py`：任务协调线程、流式生成、播放与导出调度；不直接加载显卡模型。
+- `app/model_worker.py`：单个持久模型子进程、本机有界通信、取消、故障恢复和主程序退出联动回收。
+- `app/audio_output.py`：独立管理线程拥有唯一音频流，通过 Windows 默认端点检测切换并有限重连。
 - `app/win_native.py`、`hotkeys.py`、`startup.py`：Windows 集成和快捷键规则。
 - `app/priority_hotkeys.py`：可选的线程内键盘接管；回调只匹配设定组合并投递操作，不执行复制、推理或文件操作。
-- `app/mp3_export.py`、`tempo.py`：MP3 编码与语速处理。
+- `app/mp3_export.py`、`tempo.py`：MP3 编码、磁盘错误检查与语速处理。
+- `app/export_plan.py`：仅在内存中规划单文件/分章输出，文件名不使用原文，不保存续作状态。
+- `app/runtime_errors.py`：固定错误类别与安全提示；不保存异常正文或路径。
 - `app/export_estimate.py`：纯数值的文本分析、短样本选择和耗时范围；不访问模型、文件或设置。
 - `app/ui_tooltip.py`：临时悬浮说明，不保存使用状态。
 - `app/settings.py`、`privacy.py`：设置位置、迁移和应用自身的隐私边界。

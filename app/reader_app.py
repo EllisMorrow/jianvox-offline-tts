@@ -7,6 +7,7 @@ sys.dont_write_bytecode = True
 import threading
 import time
 import math
+import platform
 from collections import OrderedDict
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -19,7 +20,8 @@ from hotkeys import ACTION_NAMES, DEFAULT_HOTKEYS, validate_bindings
 from reader_core import Reader, VOICES, split_text
 from export_estimate import analyze_text, select_sample, Calibration, estimate_export
 from reader_ui import ReaderUI, BG, ACCENT
-from win_native import Native, CopyCancelled, clipboard_text, copy_selection, U
+from runtime_errors import RuntimeIssue
+from win_native import Native, CopyCancelled, clipboard_text, copy_selection, clear_clipboard_if_unchanged, U
 
 from version import APP_NAME, VERSION
 
@@ -59,6 +61,10 @@ class App:
         self.exporting = False
         self.export_id = None
         self.export_summary = "正在估算剩余时间"
+        self.export_chapters_saved = 0
+        self.export_chaptered = False
+        self.export_error = None
+        self.last_issue = None
         self.estimating = False
         self.estimate_id = self.estimate_token = self.estimate_job = None
         self.calibrations = OrderedDict()  # Session-only numerical measurements; never store source text.
@@ -71,6 +77,8 @@ class App:
         self.export_directory = tk.StringVar(value=self.preferences.export_directory)
         self.theme = tk.StringVar(value=THEME_LABELS[self.preferences.theme])
         self.priority_hotkeys = tk.BooleanVar(value=self.preferences.priority_hotkeys)
+        self.export_mode = tk.StringVar(value="分章 MP3" if self.preferences.chaptered_export else "单个 MP3")
+        self.diagnostic_text = tk.StringVar(value="本次运行暂无错误记录；诊断仅在内存中保留。")
         self.status = tk.StringVar(value="正在准备声音…" if not preview else "界面演示 · 未加载模型")
         self.hint = tk.StringVar()
         self.voice = tk.StringVar(value=next(k for k, v in VOICES.items() if v == self.preferences.voice))
@@ -162,10 +170,14 @@ class App:
         try:
             self.save_playback()
             number = self.reader.submit(text, self.preferences.voice, self.preferences.style,
-                                       speed=self.preferences.speed, output=target)
+                                       speed=self.preferences.speed, output=target,
+                                       chaptered=self.export_mode.get() == "分章 MP3")
             self.export_id = number
             self.export_summary = "正在估算剩余时间"
             self.exporting = True
+            self.export_chapters_saved = 0
+            self.export_chaptered = self.export_mode.get() == "分章 MP3"
+            self.export_error = None
             self.editor_request = (number, text)
             self.preferences.export_directory = str(Path(target).parent)
             self.export_directory.set(self.preferences.export_directory)
@@ -173,6 +185,7 @@ class App:
             self.export_button.configure(state="disabled")
             self.estimate_button.configure(state="disabled")
             self.pause_button.configure(state="disabled")
+            self.export_mode_menu.configure(state="disabled")
             self.ui.show_export_progress()
             self.export_progress.set(0)
             self.status.set("正在导出 MP3，准备第一段… 可点击停止取消。")
@@ -256,7 +269,39 @@ class App:
         self.preferences.voice = VOICES[self.voice.get()]
         self.preferences.speed = round(self.speed.get(), 2)
         self.preferences.volume = round(self.volume.get(), 2)
+        self.preferences.chaptered_export = self.export_mode.get() == "分章 MP3"
         self.persist()
+
+    def change_export_mode(self, _choice):
+        self.save_playback()
+
+    def reload_model(self):
+        if not self.reader:
+            self.show_error("界面预览模式不加载模型。")
+            return
+        try:
+            self.reader.restart()
+            self.status.set("正在重新加载本地声音，请稍候…")
+        except ValueError as exc:
+            self.show_error(str(exc))
+
+    def report_issue(self, issue):
+        self.last_issue = issue.code
+        self.diagnostic_text.set(f"本次最近错误：{issue.code}（不含正文、音频或文件路径）。")
+        if self.exporting and issue.code != "audio_unavailable":
+            self.export_error = issue.message
+        self.show_error(issue.message)
+
+    def copy_diagnostics(self):
+        # User explicitly copies this fixed-field summary; no traceback, paths,
+        # source text, voice instructions or generation history are included.
+        ready = bool(self.reader and self.reader.ready)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(
+            f"JianVox {VERSION}\nPython {platform.python_version()}\n"
+            f"Platform: {sys.platform}\nModel ready: {ready}\n"
+            f"Last error: {self.last_issue or 'none'}")
+        self.status.set("已复制诊断摘要；不含正文、路径、语气设置或生成记录。")
 
     def persist(self):
         if self.demo:
@@ -327,15 +372,28 @@ class App:
                 self.editor_request = (number, text.strip())
             self.pause_button.configure(text="暂停")
             self.status.set("正在生成声音…")
+            return number
         except ValueError as exc:
             self.show_error(str(exc))
+
+    def accept_clipboard(self, text, sequence, started=None):
+        number = self.read(text, started)
+        if number is not None:
+            try:
+                clear_clipboard_if_unchanged(sequence)
+            except (ValueError, OSError):
+                self.show_error("朗读已接受，但剪贴板暂时无法清空；请自行清理需要保密的内容。")
 
     def read_clipboard(self):
         if self.exporting or self.estimating:
             self.show_error("请先停止当前导出或预估，再朗读剪贴板。")
             return
+        if not self.reader or not self.reader.ready:
+            self.show_error("声音仍在准备中，请等待“已就绪”。")
+            return
         try:
-            self.read(clipboard_text(clear_after=True))
+            text, sequence = clipboard_text(with_sequence=True)
+            self.accept_clipboard(text, sequence)
         except (ValueError, OSError) as exc:
             self.show_error(str(exc))
 
@@ -353,8 +411,9 @@ class App:
         key = self.hotkeys.get("read", self.preferences.hotkeys["read"])
         def task():
             try:
-                text = copy_selection(key, active=lambda: not self.closed and self.reader.number == token)
-                self.events.put(("selection_copied", (text, started, token)))
+                text, sequence = copy_selection(key, active=lambda: not self.closed and self.reader.number == token,
+                                                defer_clear=True)
+                self.events.put(("selection_copied", (text, started, token, sequence)))
             except CopyCancelled:
                 pass
             except (ValueError, OSError) as exc:
@@ -402,7 +461,7 @@ class App:
                 if kind == "read_selection":
                     self.selection(data)
                 elif kind == "selection_copied" and data[2] == self.reader.number:
-                    self.read(data[0], data[1])
+                    self.accept_clipboard(data[0], data[3], data[1])
                 elif kind == "copy_error" and data[1] == self.reader.number:
                     self.show_error(data[0])
                 elif kind == "stop":
@@ -439,8 +498,20 @@ class App:
                 elif kind == "status":
                     self.status.set(data)
                 elif kind == "ready":
-                    self.status.set("已就绪，随时可以开始朗读。")
+                    output = getattr(self.reader, "output", None)
+                    self.status.set("已就绪，随时可以开始朗读。" if output is None or output.available else
+                                    "声音已就绪，正在连接播放设备；MP3 导出可用。")
                     self.dot.configure(text_color=SUCCESS_COLOR)
+                elif kind == "engine_loading":
+                    self.status.set("正在准备本地声音，请稍候…")
+                elif kind == "audio_unavailable":
+                    self.report_issue(RuntimeIssue("audio_unavailable", data))
+                elif kind == "audio_reconnected":
+                    if self.reader and self.reader.ready and not self.exporting and not self.estimating:
+                        self.status.set("播放设备已连接，可继续朗读。")
+                        self.dot.configure(text_color=SUCCESS_COLOR)
+                elif kind == "issue":
+                    self.report_issue(data)
                 elif kind == "estimate_error" and data[0] is self.estimate_token:
                     self.finish_estimate()
                     self.show_error(data[1])
@@ -502,7 +573,10 @@ class App:
                     self.export_summary = f"{done / total:.0%} · 预计剩余 {int(eta)//60} 分 {int(eta)%60} 秒"
                     self.status.set(f"正在导出 MP3 · {self.export_summary} · 可停止取消")
                 elif kind == "export_activity" and data[0] == self.export_id:
-                    self.status.set(f"正在导出 MP3 · 第 {data[1]}/{data[2]} 段 · {self.export_summary} · 可停止取消")
+                    self.status.set(f"正在导出 MP3 · {self.export_summary} · 可停止取消")
+                elif kind == "chapter_saved" and data[0] == self.export_id:
+                    self.export_chapters_saved = data[1]
+                    self.status.set(f"已保存 {data[1]}/{data[2]} 个分章文件，正在继续…")
                 elif kind in {"export_done", "export_cancelled"}:
                     number = data[0] if kind == "export_done" else data
                     if number == self.export_id:
@@ -511,12 +585,17 @@ class App:
                         self.export_button.configure(state="normal")
                         self.estimate_button.configure(state="normal")
                         self.pause_button.configure(state="normal", text="暂停")
+                        self.export_mode_menu.configure(state="normal")
                         self.ui.hide_export_progress()
                         if kind == "export_done":
-                            self.status.set("MP3 已保存到你选择的位置。")
+                            self.status.set(f"已保存 {self.export_chapters_saved} 个分章 MP3。" if self.export_chaptered else
+                                            "MP3 已保存到你选择的位置。")
                             self.clear_completed_text(number)
-                        elif self.status.get().startswith("正在"):
-                            self.status.set("导出已取消，临时音频已清理。")
+                        elif self.export_error:
+                            self.show_error(self.export_error)
+                        else:
+                            self.status.set(f"导出已取消，已完成的 {self.export_chapters_saved} 个分章文件已保留。" if self.export_chapters_saved else
+                                            "导出已取消，临时音频已清理。")
                         self.editor_request = None
                 elif kind == "audio_warning":
                     logging.warning(data)

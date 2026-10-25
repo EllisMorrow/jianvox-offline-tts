@@ -3,11 +3,12 @@ import tempfile
 import unittest
 import subprocess
 import sys
+import errno
 from types import SimpleNamespace
 from unittest.mock import patch
 import numpy as np
 import soundfile as sf
-from mp3_export import MP3Export, ExportCancelled
+from mp3_export import MP3Export, ExportCancelled, ExportError
 from privacy import clear_legacy_artifacts
 import settings
 from settings import Preferences
@@ -68,6 +69,101 @@ class ExportTests(unittest.TestCase):
                 with MP3Export(path):
                     pass
             self.assertEqual(path.read_bytes(), b"original")
+
+    def test_file_created_during_encoding_is_preserved_at_commit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with MP3Export(path) as export:
+                export.write(self.wave())
+                path.write_bytes(b"created by another application")
+                with self.assertRaises(FileExistsError):
+                    export.commit(lambda: True)
+            self.assertEqual(path.read_bytes(), b"created by another application")
+            self.assertEqual(list(Path(tmp).iterdir()), [path])
+
+    def test_permission_failure_is_safe_and_actionable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with patch("mp3_export.tempfile.TemporaryFile", side_effect=PermissionError("private/path")):
+                with self.assertRaises(ExportError) as caught:
+                    with MP3Export(path):
+                        pass
+            self.assertEqual(caught.exception.code, "save_permission")
+            self.assertNotIn("private/path", str(caught.exception))
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_unavailable_encoder_closes_temporary_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with patch("mp3_export.sf.SoundFile", side_effect=RuntimeError("private input")):
+                with self.assertRaises(ExportError) as caught:
+                    with MP3Export(path):
+                        pass
+            self.assertEqual(caught.exception.code, "mp3_encoder")
+            self.assertNotIn("private input", str(caught.exception))
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_disk_full_during_encoding_is_classified_and_cleans_temp(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with self.assertRaises(ExportError) as caught:
+                with MP3Export(path) as export:
+                    with patch.object(export.writer, "write", side_effect=OSError(errno.ENOSPC, "private/path")):
+                        export.write(self.wave())
+            self.assertEqual(caught.exception.code, "disk_full")
+            self.assertNotIn("private/path", str(caught.exception))
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_publish_permission_failure_keeps_target_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with self.assertRaises(ExportError) as caught:
+                with MP3Export(path) as export:
+                    export.write(self.wave())
+                    with patch("mp3_export.Path.open", side_effect=PermissionError("private/path")):
+                        export.commit(lambda: True)
+            self.assertEqual(caught.exception.code, "save_permission")
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_finalization_failure_does_not_claim_success(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with self.assertRaises(ExportError) as caught:
+                with MP3Export(path) as export:
+                    export.write(self.wave())
+                    original_close = export.writer.close
+                    def failing_close():
+                        original_close()
+                        raise RuntimeError("private input")
+                    with patch.object(export.writer, "close", side_effect=failing_close):
+                        export.commit(lambda: True)
+            self.assertEqual(caught.exception.code, "mp3_encoder")
+            self.assertFalse(path.exists())
+
+    def test_disk_full_inside_real_codec_callback_is_not_silently_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with self.assertRaises(ExportError) as caught:
+                with MP3Export(path) as export:
+                    with patch.object(export.temp, "write", side_effect=OSError(errno.ENOSPC, "private/path")):
+                        # Encoding or finalization must report a callback I/O
+                        # failure even if libsndfile itself returns successfully.
+                        export.write(np.tile(self.wave(), 10))
+                        export.commit(lambda: True)
+            self.assertEqual(caught.exception.code, "disk_full")
+            self.assertNotIn("private/path", str(caught.exception))
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_partial_disk_write_inside_codec_is_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with self.assertRaises(ExportError) as caught:
+                with MP3Export(path) as export:
+                    with patch.object(export.temp, "write", return_value=0):
+                        export.write(np.tile(self.wave(), 10))
+                        export.commit(lambda: True)
+            self.assertEqual(caught.exception.code, "save_io")
+            self.assertEqual(list(Path(tmp).iterdir()), [])
 
     def test_process_crash_releases_temporary_audio(self):
         with tempfile.TemporaryDirectory() as tmp:

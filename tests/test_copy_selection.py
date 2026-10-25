@@ -73,8 +73,56 @@ class CopyTests(unittest.TestCase):
         self.send.assert_called_once()
         self.read.assert_not_called()
 
+    def test_deferred_selection_returns_snapshot_without_consuming_clipboard(self):
+        self.read.return_value = ("新复制的公开测试文字", 21)
+        self.assertEqual(native.copy_selection(defer_clear=True),
+                         ("新复制的公开测试文字", 21))
+        self.read.assert_called_once_with(expected_sequence=21, active=None, with_sequence=True)
+
 
 class ClipboardReadTests(unittest.TestCase):
+    def test_snapshot_read_returns_sequence_without_clearing_clipboard(self):
+        text = C.create_unicode_buffer("公开快照文字")
+        with patch.object(native.U, "OpenClipboard", return_value=True), \
+             patch.object(native.U, "CloseClipboard") as close, \
+             patch.object(native.U, "IsClipboardFormatAvailable", return_value=True), \
+             patch.object(native.U, "GetClipboardData", return_value=1), \
+             patch.object(native.U, "GetClipboardSequenceNumber", return_value=37), \
+             patch.object(native.K, "GlobalLock", return_value=C.addressof(text)), \
+             patch.object(native.K, "GlobalUnlock") as unlock, \
+             patch.object(native.U, "EmptyClipboard") as clear:
+            self.assertEqual(native.clipboard_text(with_sequence=True), ("公开快照文字", 37))
+        clear.assert_not_called()
+        unlock.assert_called_once_with(1)
+        close.assert_called_once()
+
+    def test_consuming_changed_snapshot_preserves_new_clipboard(self):
+        with patch.object(native.U, "OpenClipboard", return_value=True), \
+             patch.object(native.U, "CloseClipboard") as close, \
+             patch.object(native.U, "GetClipboardSequenceNumber", return_value=38), \
+             patch.object(native.U, "EmptyClipboard") as clear:
+            self.assertFalse(native.clear_clipboard_if_unchanged(37))
+        clear.assert_not_called()
+        close.assert_called_once()
+
+    def test_consuming_same_snapshot_clears_only_that_version(self):
+        with patch.object(native.U, "OpenClipboard", return_value=True), \
+             patch.object(native.U, "CloseClipboard") as close, \
+             patch.object(native.U, "GetClipboardSequenceNumber", return_value=37), \
+             patch.object(native.U, "EmptyClipboard", return_value=True) as clear:
+            self.assertTrue(native.clear_clipboard_if_unchanged(37))
+        clear.assert_called_once()
+        close.assert_called_once()
+
+    def test_consuming_snapshot_reports_clear_failure_and_releases_lock(self):
+        with patch.object(native.U, "OpenClipboard", return_value=True), \
+             patch.object(native.U, "CloseClipboard") as close, \
+             patch.object(native.U, "GetClipboardSequenceNumber", return_value=37), \
+             patch.object(native.U, "EmptyClipboard", return_value=False):
+            with self.assertRaisesRegex(ValueError, "未能自动清空"):
+                native.clear_clipboard_if_unchanged(37)
+        close.assert_called_once()
+
     def test_sequence_change_before_lock_does_not_read_or_clear_clipboard(self):
         with patch.object(native.U, "OpenClipboard", return_value=True), \
              patch.object(native.U, "CloseClipboard") as close, \

@@ -53,6 +53,7 @@ class Preferences:
     hotkeys: dict = field(default_factory=lambda: dict(DEFAULT_HOTKEYS))
     priority_hotkeys: bool = False
     export_directory: str = ""
+    chaptered_export: bool = False
 
     def validate(self):
         if self.voice not in {"serena", "vivian", "uncle_fu", "dylan", "eric", "ryan", "aiden", "ono_anna", "sohee"}:
@@ -70,6 +71,8 @@ class Preferences:
             raise ValueError("快捷键优先接管设置无效。")
         if not isinstance(self.export_directory, str) or "\0" in self.export_directory:
             raise ValueError("保存目录无效。")
+        if not isinstance(self.chaptered_export, bool):
+            raise ValueError("分章导出设置无效。")
         return self
 
     @classmethod

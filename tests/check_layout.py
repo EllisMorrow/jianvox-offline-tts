@@ -2,6 +2,7 @@
 import ctypes as C
 from ctypes import wintypes as W
 import sys
+import time
 from unittest.mock import patch
 import customtkinter as ctk
 from reader_app import App
@@ -9,6 +10,12 @@ from settings import Preferences
 
 
 def contains(widget, parent, label):
+    # Window/DPI changes and remapping pages are asynchronous on Windows.
+    # Wait only for mapping; the actual bounds assertions below remain strict.
+    deadline = time.monotonic() + 1
+    while not widget.winfo_ismapped() and time.monotonic() < deadline:
+        widget.update()
+        time.sleep(.01)
     assert widget.winfo_ismapped(), f"{label} is hidden"
     x, y = widget.winfo_rootx(), widget.winfo_rooty()
     px, py = parent.winfo_rootx(), parent.winfo_rooty()
@@ -59,7 +66,7 @@ try:
                             app.ui.show_page("朗读")
                             app.status.set("正在导出 MP3，正在生成片段并估算剩余时间。" * 5)
                             app.root.update()
-                            for name in ["read_button", "pause_button", "stop_button", "clipboard_button", "export_button", "estimate_button"]:
+                            for name in ["read_button", "pause_button", "stop_button", "clipboard_button", "export_mode_menu", "export_button", "estimate_button"]:
                                 contains(getattr(app, name), app.root, name)
                             contains(app.ui.sidebar_toggle, app.ui.sidebar_handle, "sidebar toggle")
                             if collapsed:
@@ -102,8 +109,14 @@ try:
                             contains(app.key_save, app.ui.pages["快捷键"], "save hotkeys")
                             contains(app.priority_checkbox, app.ui.pages["快捷键"], "priority shortcut option")
                             app.ui.show_page("设置")
+                            app.ui.settings_panel._parent_canvas.yview_moveto(0)
                             app.root.update()
-                            contains(app.theme_menu, app.ui.pages["设置"], "theme selection")
+                            contains(app.theme_menu, app.ui.pages["设置"],
+                                     f"theme selection {(theme, scale, width, height, collapsed, cases)}")
+                            app.ui.settings_panel._parent_canvas.yview_moveto(1)
+                            app.root.update()
+                            contains(app.recovery_button, app.ui.pages["设置"], "model recovery button")
+                            contains(app.diagnostic_button, app.ui.pages["设置"], "safe diagnostics button")
                             cases += 1
         app.ui.show_page("朗读")
         app.root.update()

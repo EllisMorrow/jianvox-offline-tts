@@ -141,8 +141,8 @@ class ReaderTests(unittest.TestCase):
     def test_probe_worker_measures_raw_audio_without_gpu(self):
         class FakeModel:
             talker_graph = SimpleNamespace(cache_position=SimpleNamespace(item=lambda: 100), max_seq_len=2048)
-            def generate_custom_voice_streaming(self, **kwargs):
-                self.text = kwargs["text"]
+            def stream(self, text, speaker, style, active=None):
+                self.text = text
                 yield np.ones(12000, dtype=np.float32), 24000, {}
                 yield np.ones(6000, dtype=np.float32), 24000, {}
 
@@ -171,7 +171,7 @@ class ReaderTests(unittest.TestCase):
             def __init__(self, reader):
                 self.reader = reader
 
-            def generate_custom_voice_streaming(self, **kwargs):
+            def stream(self, text, speaker, style, active=None):
                 yield np.ones(12000, dtype=np.float32), 24000, {}
                 self.reader.stop()
 

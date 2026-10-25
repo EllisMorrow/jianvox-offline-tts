@@ -28,7 +28,7 @@ class PreferenceTests(unittest.TestCase):
                                 hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
             prefs.save(path)
             self.assertEqual(Preferences.load(path), prefs)
-            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory"})
+            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory", "chaptered_export"})
 
     def test_legacy_settings_default_to_system_theme(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -36,6 +36,7 @@ class PreferenceTests(unittest.TestCase):
             path.write_text('{"voice":"serena","speed":1.1}', "utf-8")
             self.assertEqual(Preferences.load(path).theme, "system")
             self.assertFalse(Preferences.load(path).priority_hotkeys)
+            self.assertFalse(Preferences.load(path).chaptered_export)
             self.assertEqual(path.read_text("utf-8"), '{"voice":"serena","speed":1.1}')
 
     def test_blank_hotkeys_are_independently_disabled(self):
@@ -61,6 +62,8 @@ class PreferenceTests(unittest.TestCase):
         for value in (None, 1, "true"):
             with self.assertRaises(ValueError):
                 Preferences(priority_hotkeys=value).validate()
+            with self.assertRaises(ValueError):
+                Preferences(chaptered_export=value).validate()
 
 
 class TempoTests(unittest.TestCase):

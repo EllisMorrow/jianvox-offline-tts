@@ -107,7 +107,7 @@ class CopyCancelled(ValueError):
     pass
 
 
-def clipboard_text(clear_after=False, *, expected_sequence=None, active=None):
+def clipboard_text(clear_after=False, *, expected_sequence=None, active=None, with_sequence=False):
     deadline = time.monotonic() + .6
     while not U.OpenClipboard(None):
         if active is not None and not active():
@@ -132,14 +132,32 @@ def clipboard_text(clear_after=False, *, expected_sequence=None, active=None):
             K.GlobalUnlock(handle)
         if active is not None and not active():
             raise CopyCancelled()
+        sequence = U.GetClipboardSequenceNumber() if with_sequence else None
         if clear_after and not U.EmptyClipboard():
             raise ValueError("未能清空本次剪贴板，请稍后重试。")
-        return text
+        return (text, sequence) if with_sequence else text
     finally:
         U.CloseClipboard()
 
 
-def copy_selection(hotkey="F4", *, active=None):
+def clear_clipboard_if_unchanged(sequence):
+    """Consume only a snapshot accepted by the reader, never a newer copy."""
+    deadline = time.monotonic() + .6
+    while not U.OpenClipboard(None):
+        if time.monotonic() >= deadline:
+            raise ValueError("朗读已接受，但剪贴板被占用，未能自动清空。")
+        time.sleep(.015)
+    try:
+        if U.GetClipboardSequenceNumber() != sequence:
+            return False
+        if not U.EmptyClipboard():
+            raise ValueError("朗读已接受，但未能自动清空剪贴板。")
+        return True
+    finally:
+        U.CloseClipboard()
+
+
+def copy_selection(hotkey="F4", *, active=None, defer_clear=False):
     # Never read the previous clipboard if the target app did not complete Ctrl+C.
     target = U.GetForegroundWindow()
     if not target:
@@ -181,6 +199,8 @@ def copy_selection(hotkey="F4", *, active=None):
             if sequence != before:
                 changed = True
                 if U.IsClipboardFormatAvailable(13):
+                    if defer_clear:
+                        return clipboard_text(expected_sequence=sequence, active=active, with_sequence=True)
                     return clipboard_text(clear_after=True, expected_sequence=sequence, active=active)
             time.sleep(.015)
         if changed:
