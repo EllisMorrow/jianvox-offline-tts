@@ -24,16 +24,18 @@ class PreferenceTests(unittest.TestCase):
     def test_settings_roundtrip_excludes_text(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"
-            prefs = Preferences(theme="dark", speed=1.25, volume=.4, hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
+            prefs = Preferences(theme="dark", speed=1.25, volume=.4, priority_hotkeys=True,
+                                hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
             prefs.save(path)
             self.assertEqual(Preferences.load(path), prefs)
-            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "export_directory"})
+            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory"})
 
     def test_legacy_settings_default_to_system_theme(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"
             path.write_text('{"voice":"serena","speed":1.1}', "utf-8")
             self.assertEqual(Preferences.load(path).theme, "system")
+            self.assertFalse(Preferences.load(path).priority_hotkeys)
             self.assertEqual(path.read_text("utf-8"), '{"voice":"serena","speed":1.1}')
 
     def test_blank_hotkeys_are_independently_disabled(self):
@@ -56,6 +58,9 @@ class PreferenceTests(unittest.TestCase):
         for kwargs in [{"speed": .5}, {"speed": 2}, {"volume": 1.1}, {"volume": -1}, {"voice": "unknown"}, {"theme": "automatic"}, {"theme": []}]:
             with self.assertRaises(ValueError):
                 Preferences(**kwargs).validate()
+        for value in (None, 1, "true"):
+            with self.assertRaises(ValueError):
+                Preferences(priority_hotkeys=value).validate()
 
 
 class TempoTests(unittest.TestCase):

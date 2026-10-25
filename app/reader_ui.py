@@ -313,7 +313,15 @@ class ReaderUI:
         app.key_save = self.button(actions, "保存快捷键", app.apply_hotkeys, "primary", width=124)
         app.key_save.pack(side="left")
         self.button(actions, "填入默认值", app.default_keys, "quiet", width=124).pack(side="left", padx=10)
-        self.label(parent, "若快捷键被其他程序占用，会提示并恢复原绑定。", 11, color=MUTED).grid(row=1, column=0, sticky="nw", pady=14)
+        app.priority_checkbox = ctk.CTkCheckBox(actions, text="优先接管已占用快捷键", variable=app.priority_hotkeys,
+            checkbox_width=18, checkbox_height=18, width=178, height=28, font=self.font(11),
+            fg_color=PRIMARY_FILL, hover_color=PRIMARY_HOVER, border_color=MUTED,
+            text_color=INK, checkmark_color="#FFFFFF")
+        app.priority_checkbox.pack(side="right", padx=(8, 0))
+        self.priority_tooltip = Tooltip(app.priority_checkbox,
+            "勾选后点击保存，即可优先处理设定的快捷键。\n其他程序将收不到这些组合；未设置的按键照常使用。\n系统保护界面、权限差异及其他拦截工具可能影响接管。")
+        self.label(parent, "优先接管会屏蔽其他程序的同一组合；关闭后恢复普通注册方式。", 11,
+                   color=MUTED, wraplength=560, justify="left").grid(row=1, column=0, sticky="nw", pady=14)
 
     def build_settings(self, parent):
         app = self.app

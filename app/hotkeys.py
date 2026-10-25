@@ -51,3 +51,46 @@ def validate_bindings(values):
     if len({(key.modifiers, key.vk) for key in parsed.values()}) != len(parsed):
         raise ValueError("三个操作不能使用相同的快捷键。")
     return {action: parsed[action].label if action in parsed else "" for action in DEFAULT_HOTKEYS}
+
+
+class HotkeyMatcher:
+    """Match exact chords; retain only modifier state and intercepted trigger keys."""
+    MODIFIER_KEYS = {0x10: 4, 0xA0: 4, 0xA1: 4,
+                     0x11: 2, 0xA2: 2, 0xA3: 2,
+                     0x12: 1, 0xA4: 1, 0xA5: 1, 0x5B: 8, 0x5C: 8}
+
+    def __init__(self, bindings, held_modifiers=()):
+        values = validate_bindings(bindings)
+        self.chords = {(key.modifiers, key.vk): action
+                       for action, value in values.items() if value
+                       for key in [parse_hotkey(value)]}
+        self.modifiers = set(held_modifiers) & self.MODIFIER_KEYS.keys()
+        self.intercepted = set()
+        self.trigger_keys = {vk for _, vk in self.chords}
+        self.down = set()
+
+    def process(self, vk, down):
+        if vk in self.MODIFIER_KEYS:
+            if down:
+                self.modifiers.add(vk)
+            else:
+                self.modifiers.discard(vk)
+            return False, None
+        if not down:
+            self.down.discard(vk)
+            if vk in self.intercepted:
+                self.intercepted.remove(vk)
+                return True, None
+            return False, None
+        if vk in self.intercepted:
+            return True, None
+        if vk in self.trigger_keys and vk not in self.down:
+            self.down.add(vk)
+            modifiers = 0
+            for key in self.modifiers:
+                modifiers |= self.MODIFIER_KEYS[key]
+            action = self.chords.get((modifiers, vk))
+            if action:
+                self.intercepted.add(vk)
+                return True, action
+        return False, None

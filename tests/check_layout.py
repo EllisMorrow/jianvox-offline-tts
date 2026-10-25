@@ -100,6 +100,7 @@ try:
                             for action, entry in app.key_entries.items():
                                 contains(entry, app.ui.pages["快捷键"], f"{action} hotkey entry")
                             contains(app.key_save, app.ui.pages["快捷键"], "save hotkeys")
+                            contains(app.priority_checkbox, app.ui.pages["快捷键"], "priority shortcut option")
                             app.ui.show_page("设置")
                             app.root.update()
                             contains(app.theme_menu, app.ui.pages["设置"], "theme selection")

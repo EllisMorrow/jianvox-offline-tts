@@ -51,6 +51,7 @@ class Preferences:
     speed: float = 1.0
     volume: float = 0.85
     hotkeys: dict = field(default_factory=lambda: dict(DEFAULT_HOTKEYS))
+    priority_hotkeys: bool = False
     export_directory: str = ""
 
     def validate(self):
@@ -65,6 +66,8 @@ class Preferences:
         if not isinstance(self.volume, (float, int)) or not 0 <= self.volume <= 1:
             raise ValueError("音量范围为 0–100%。")
         self.hotkeys = validate_bindings(self.hotkeys)
+        if not isinstance(self.priority_hotkeys, bool):
+            raise ValueError("快捷键优先接管设置无效。")
         if not isinstance(self.export_directory, str) or "\0" in self.export_directory:
             raise ValueError("保存目录无效。")
         return self

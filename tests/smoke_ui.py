@@ -50,6 +50,21 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
         app.reader = None
         app.exporting = False
         app.clear_text()
+        with patch.object(app, "persist"), patch.object(app, "show_error"):
+            app.native = Mock()
+            app.priority_hotkeys.set(True)
+            app.apply_hotkeys()
+            expected = {action: entry.get() for action, entry in app.key_entries.items()}
+            app.native.retry.assert_called_once_with(expected, priority=True)
+            app.events.put(("hotkeys", {"success": True, "bindings": expected, "priority": True, "error": ""}))
+            app.poll()
+            assert app.preferences.priority_hotkeys
+            assert "优先接管" in app.key_status.cget("text")
+            app.priority_hotkeys.set(False)
+            app.events.put(("hotkeys", {"success": False, "bindings": expected, "priority": True, "error": "测试冲突"}))
+            app.poll()
+            assert app.priority_hotkeys.get(), "Failed change did not restore the effective mode"
+            app.native = None
         with tempfile.TemporaryDirectory() as tmp, patch.object(app, "persist"), patch("reader_app.filedialog.asksaveasfilename", return_value=str(Path(tmp)/"test.mp3")):
             app.text.insert("1.0", "这是窗口导出流程的测试文字。")
             app.reader = SimpleNamespace(ready=True, number=1, submit=Mock(return_value=1))

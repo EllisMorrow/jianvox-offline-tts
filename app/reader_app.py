@@ -19,7 +19,7 @@ from hotkeys import ACTION_NAMES, DEFAULT_HOTKEYS, validate_bindings
 from reader_core import Reader, VOICES, split_text
 from export_estimate import analyze_text, select_sample, Calibration, estimate_export
 from reader_ui import ReaderUI, BG, ACCENT
-from win_native import Native, clipboard_text, copy_selection, U
+from win_native import Native, CopyCancelled, clipboard_text, copy_selection, U
 
 from version import APP_NAME, VERSION
 
@@ -37,7 +37,8 @@ class App:
         preview = preview or demo
         self.preferences = Preferences() if demo else Preferences.load()
         self.preview = preview
-        self.native = None if preview else Native(self.events, self.preferences.hotkeys)
+        self.native = None if preview else Native(self.events, self.preferences.hotkeys,
+                                                  priority=self.preferences.priority_hotkeys)
         if self.native and self.native.existing:
             return
         if not demo:
@@ -69,6 +70,7 @@ class App:
                 self.events.put(("error", "开机启动路径未能更新，请重新切换自启开关。"))
         self.export_directory = tk.StringVar(value=self.preferences.export_directory)
         self.theme = tk.StringVar(value=THEME_LABELS[self.preferences.theme])
+        self.priority_hotkeys = tk.BooleanVar(value=self.preferences.priority_hotkeys)
         self.status = tk.StringVar(value="正在准备声音…" if not preview else "界面演示 · 未加载模型")
         self.hint = tk.StringVar()
         self.voice = tk.StringVar(value=next(k for k, v in VOICES.items() if v == self.preferences.voice))
@@ -94,7 +96,7 @@ class App:
         self.ui.build()
 
     def sync_labels(self):
-        bindings = self.preferences.hotkeys
+        bindings = self.hotkeys or self.preferences.hotkeys
         enabled = [f"{key} {ACTION_NAMES[action]}" for action, key in bindings.items() if key]
         self.hint.set(" · ".join(enabled) if enabled else "快捷键已停用，可使用窗口按钮朗读。")
         self.speed_text.set(f"{self.speed.get():.2f}×")
@@ -306,7 +308,7 @@ class App:
             return
         if self.native:
             self.key_save.configure(state="disabled")
-            self.native.retry(bindings)
+            self.native.retry(bindings, priority=self.priority_hotkeys.get())
         else:
             self.key_status.configure(text="预览模式不注册全局快捷键。")
 
@@ -351,7 +353,10 @@ class App:
         key = self.hotkeys.get("read", self.preferences.hotkeys["read"])
         def task():
             try:
-                self.events.put(("selection_copied", (copy_selection(key), started, token)))
+                text = copy_selection(key, active=lambda: not self.closed and self.reader.number == token)
+                self.events.put(("selection_copied", (text, started, token)))
+            except CopyCancelled:
+                pass
             except (ValueError, OSError) as exc:
                 self.events.put(("copy_error", (str(exc), token)))
             finally:
@@ -412,12 +417,17 @@ class App:
                     return
                 elif kind == "hotkeys":
                     self.hotkeys = data["bindings"]
+                    priority = data.get("priority", self.preferences.priority_hotkeys)
+                    self.priority_hotkeys.set(priority)
                     self.key_save.configure(state="normal")
+                    self.sync_labels()
                     if data["success"]:
                         self.preferences.hotkeys = dict(self.hotkeys)
+                        self.preferences.priority_hotkeys = priority
                         self.persist()
                         self.sync_labels()
-                        self.key_status.configure(text="快捷键已生效。", text_color=SUCCESS_COLOR)
+                        self.key_status.configure(text="快捷键已生效（优先接管）。" if priority else "快捷键已生效（普通模式）。",
+                                                  text_color=SUCCESS_COLOR)
                         for action, entry in self.key_entries.items():
                             entry.delete(0, "end")
                             entry.insert(0, self.hotkeys[action])

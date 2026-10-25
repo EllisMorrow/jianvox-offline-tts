@@ -6,6 +6,7 @@
 - `app/reader_ui.py`：页面、组件样式和布局；不加载模型、不读写个人文件。
 - `app/reader_core.py`：单个模型工作线程、流式生成、播放与导出调度。
 - `app/win_native.py`、`hotkeys.py`、`startup.py`：Windows 集成和快捷键规则。
+- `app/priority_hotkeys.py`：可选的线程内键盘接管；回调只匹配设定组合并投递操作，不执行复制、推理或文件操作。
 - `app/mp3_export.py`、`tempo.py`：MP3 编码与语速处理。
 - `app/export_estimate.py`：纯数值的文本分析、短样本选择和耗时范围；不访问模型、文件或设置。
 - `app/ui_tooltip.py`：临时悬浮说明，不保存使用状态。

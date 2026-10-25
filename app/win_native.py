@@ -5,6 +5,7 @@ import threading
 import time
 import queue
 from hotkeys import DEFAULT_HOTKEYS, ACTION_NAMES, parse_hotkey, validate_bindings
+from priority_hotkeys import PriorityHotkeys
 from version import APP_NAME
 
 U = C.WinDLL("user32", use_last_error=True)
@@ -85,6 +86,7 @@ api(U, "TrackPopupMenu", W.UINT, W.HMENU, W.UINT, C.c_int, C.c_int, C.c_int, W.H
 api(U, "DestroyMenu", W.BOOL, W.HMENU)
 api(U, "GetCursorPos", W.BOOL, C.POINTER(W.POINT))
 api(U, "SetForegroundWindow", W.BOOL, W.HWND)
+api(U, "GetForegroundWindow", W.HWND)
 api(U, "OpenClipboard", W.BOOL, W.HWND)
 api(U, "CloseClipboard", W.BOOL)
 api(U, "EmptyClipboard", W.BOOL)
@@ -98,15 +100,26 @@ api(U, "LoadImageW", W.HANDLE, W.HINSTANCE, W.LPCWSTR, W.UINT, C.c_int, C.c_int,
 api(U, "DestroyIcon", W.BOOL, W.HICON)
 
 CLASS_NAME = "QwenOfflineReaderLocalWindow_v1"
+COPY_SETTLE_SECONDS = .3
 
 
-def clipboard_text(clear_after=False):
+class CopyCancelled(ValueError):
+    pass
+
+
+def clipboard_text(clear_after=False, *, expected_sequence=None, active=None):
     deadline = time.monotonic() + .6
     while not U.OpenClipboard(None):
+        if active is not None and not active():
+            raise CopyCancelled()
         if time.monotonic() >= deadline:
             raise ValueError("剪贴板暂时被其他程序占用，请重试。")
         time.sleep(.015)
     try:
+        if active is not None and not active():
+            raise CopyCancelled()
+        if expected_sequence is not None and U.GetClipboardSequenceNumber() != expected_sequence:
+            raise ValueError("剪贴板在读取前被其他程序更新，请重新选字。")
         if not U.IsClipboardFormatAvailable(13):
             raise ValueError("剪贴板里没有文字。")
         handle = U.GetClipboardData(13)
@@ -117,6 +130,8 @@ def clipboard_text(clear_after=False):
             text = C.wstring_at(pointer)
         finally:
             K.GlobalUnlock(handle)
+        if active is not None and not active():
+            raise CopyCancelled()
         if clear_after and not U.EmptyClipboard():
             raise ValueError("未能清空本次剪贴板，请稍后重试。")
         return text
@@ -124,35 +139,67 @@ def clipboard_text(clear_after=False):
         U.CloseClipboard()
 
 
-def copy_selection(hotkey="F4"):
+def copy_selection(hotkey="F4", *, active=None):
     # Never read the previous clipboard if the target app did not complete Ctrl+C.
-    before = U.GetClipboardSequenceNumber()
-    deadline = time.monotonic() + .4
+    target = U.GetForegroundWindow()
+    if not target:
+        raise ValueError("当前窗口无法自动复制，请手动复制后使用“朗读剪贴板”。")
+    def guard():
+        if active is not None and not active():
+            raise CopyCancelled()
+        if U.GetForegroundWindow() != target:
+            raise ValueError("复制期间切换了窗口，请重新选中文字后朗读。")
+    def settle(seconds):
+        until = time.monotonic() + seconds
+        while time.monotonic() < until:
+            guard()
+            time.sleep(.01)
+    deadline = time.monotonic() + 1.2
     release_keys = [parse_hotkey(hotkey).vk, 0x10, 0x11, 0x12, 0x5B, 0x5C]
     while any(U.GetAsyncKeyState(key) & 0x8000 for key in release_keys):
+        guard()
         if time.monotonic() >= deadline:
             raise ValueError(f"请轻按一下 {hotkey}，并松开组合键。")
         time.sleep(.01)
+    # Let mouse selection, key-up and the target application's UI settle first.
+    settle(COPY_SETTLE_SECONDS)
     inputs = (INPUT * 4)()
     for item, (vk, flags) in zip(inputs, [(0x11, 0), (0x43, 0), (0x43, 2), (0x11, 2)]):
         item.type = 1
         item.ki = KEYBDINPUT(vk, 0, flags, 0, 0)
-    if U.SendInput(4, inputs, C.sizeof(INPUT)) != 4:
-        raise ValueError("无法复制当前程序的文字。请手动复制后点击“朗读剪贴板”。")
-    deadline = time.monotonic() + .85
-    while U.GetClipboardSequenceNumber() == before:
-        if time.monotonic() >= deadline:
-            raise ValueError("未复制到新文字。请先选中可复制的文字再按朗读快捷键；也可手动复制后使用“朗读剪贴板”。")
-        time.sleep(.01)
-    return clipboard_text(clear_after=True)
+    for attempt in range(2):
+        guard()
+        # Snapshot only immediately before Ctrl+C, not before the settling delay.
+        before = U.GetClipboardSequenceNumber()
+        if U.SendInput(4, inputs, C.sizeof(INPUT)) != 4:
+            raise ValueError("无法复制当前程序的文字。请手动复制后点击“朗读剪贴板”。")
+        deadline = time.monotonic() + 1.5
+        changed = False
+        while time.monotonic() < deadline:
+            guard()
+            sequence = U.GetClipboardSequenceNumber()
+            if sequence != before:
+                changed = True
+                if U.IsClipboardFormatAvailable(13):
+                    return clipboard_text(clear_after=True, expected_sequence=sequence, active=active)
+            time.sleep(.015)
+        if changed:
+            raise ValueError("本次复制没有可朗读的文字，请确认选中的是可复制文本。")
+        # One retry only if no new copy was observed and the source remains focused.
+        if not attempt:
+            settle(COPY_SETTLE_SECONDS)
+    raise ValueError("未复制到新文字。请先选中可复制的文字再按朗读快捷键；也可手动复制后使用“朗读剪贴板”。")
 
 
 class Native:
-    def __init__(self, events, bindings=None):
+    def __init__(self, events, bindings=None, *, priority=False):
         self.events = events
         self.hwnd = None
         self.registered = set()
         self.bindings = {}
+        self.priority = False
+        self.priority_hook = None
+        self.initial_priority = priority
         self.initial_bindings = validate_bindings(bindings or DEFAULT_HOTKEYS)
         self.commands = queue.Queue()
         self.icon = None
@@ -192,34 +239,67 @@ class Native:
         return failures
 
     def _unregister(self):
+        if self.priority_hook:
+            self.priority_hook.close()
+            self.priority_hook = None
         for key in self.registered:
             U.UnregisterHotKey(self.hwnd, key)
         self.registered.clear()
         self.bindings = {}
+        self.priority = False
 
-    def _keys(self, values):
+    def _activate(self, values, priority):
+        if not priority:
+            return self._register(values)
+        if any(values.values()):
+            hook = PriorityHotkeys(self.events, values)
+            hook.install()
+            self.priority_hook = hook
+        self.bindings = {key: value for key, value in values.items() if value}
+        self.priority = True
+        return []
+
+    def _keys(self, values, priority=None):
         previous = {action: self.bindings.get(action, "") for action in DEFAULT_HOTKEYS}
+        previous_priority = self.priority
+        priority = previous_priority if priority is None else priority
         try:
             values = validate_bindings(values)
+            if not isinstance(priority, bool):
+                raise ValueError("快捷键优先接管设置无效。")
         except ValueError as exc:
-            self.events.put(("hotkeys", {"success": False, "bindings": previous, "error": str(exc)}))
+            self.events.put(("hotkeys", {"success": False, "bindings": previous,
+                                         "priority": previous_priority, "error": str(exc)}))
             return
-        self._unregister()
-        failures = self._register(values)
+        try:
+            self._unregister()
+        except OSError:
+            self.events.put(("hotkeys", {"success": False, "bindings": previous,
+                "priority": previous_priority, "error": "原快捷键接管未能解除，请退出并重新打开程序。"}))
+            return
+        try:
+            failures = self._activate(values, priority)
+        except OSError as exc:
+            failures = [f"优先接管启动失败（Windows 错误 {exc.winerror}）"]
         error = ""
         if failures:
             self._unregister()
-            restore_failures = self._register(previous)
-            error = "以下快捷键被其他程序占用：" + "、".join(failures) + "。请换一个组合。"
+            try:
+                restore_failures = self._activate(previous, previous_priority)
+            except OSError:
+                restore_failures = ["原快捷键接管恢复失败"]
+            error = ("、".join(failures) + "。" if priority else
+                     "以下快捷键被其他程序占用：" + "、".join(failures) + "。可启用优先接管或更换组合。")
             if restore_failures:
                 error += "部分原快捷键也未能恢复，请重新设置。"
         self._tray(1)
         effective = {action: self.bindings.get(action, "") for action in DEFAULT_HOTKEYS}
-        self.events.put(("hotkeys", {"success": not failures, "bindings": effective, "error": error}))
+        self.events.put(("hotkeys", {"success": not failures, "bindings": effective,
+                                     "priority": self.priority, "error": error}))
 
-    def retry(self, bindings=None):
+    def retry(self, bindings=None, *, priority=None):
         if self.hwnd:
-            self.commands.put(dict(bindings or self.initial_bindings))
+            self.commands.put((dict(bindings or self.initial_bindings), priority))
             U.PostMessageW(self.hwnd, 0x8003, 0, 0)
 
     def close(self):
@@ -242,13 +322,14 @@ class Native:
         from pathlib import Path
         icon_path = Path(__file__).resolve().parent.parent / "assets" / "app.ico"
         self.icon = U.LoadImageW(None, str(icon_path), 1, 32, 32, 0x10)
-        self._keys(self.initial_bindings)
+        self._keys(self.initial_bindings, self.initial_priority)
         if not self._tray(0):
             self.events.put(("tray_error", None))
         message = W.MSG()
         while U.GetMessageW(C.byref(message), None, 0, 0) > 0:
             U.TranslateMessage(C.byref(message))
             U.DispatchMessageW(C.byref(message))
+        self._unregister()
         K.CloseHandle(self.mutex)
         if self.icon:
             U.DestroyIcon(self.icon)
@@ -262,7 +343,7 @@ class Native:
             self.events.put(("show", None))
         elif msg == 0x8003:
             try:
-                self._keys(self.commands.get_nowait())
+                self._keys(*self.commands.get_nowait())
             except queue.Empty:
                 pass
         elif msg == 0x8004:
@@ -286,8 +367,7 @@ class Native:
                     self.events.put(({1: "show", 2: "stop", 3: "exit", 4: "pause"}[choice], None))
         elif msg == 0x10:
             self._tray(2)
-            for identifier in self.registered:
-                U.UnregisterHotKey(hwnd, identifier)
+            self._unregister()
             U.DestroyWindow(hwnd)
         elif msg == 2:
             U.PostQuitMessage(0)

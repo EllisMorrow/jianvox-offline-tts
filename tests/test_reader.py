@@ -190,7 +190,8 @@ class ReaderTests(unittest.TestCase):
         self.assertIsNone(reader.probe_number)
 
     def test_copy_timeout_does_not_read_old_clipboard(self):
-        with patch.object(win_native.U, "GetClipboardSequenceNumber", return_value=20), \
+        with patch.object(win_native.U, "GetForegroundWindow", return_value=101), \
+             patch.object(win_native.U, "GetClipboardSequenceNumber", return_value=20), \
              patch.object(win_native.U, "GetAsyncKeyState", return_value=0), \
              patch.object(win_native.U, "SendInput", return_value=4), \
              patch.object(win_native, "clipboard_text") as read:
@@ -199,7 +200,9 @@ class ReaderTests(unittest.TestCase):
             read.assert_not_called()
 
     def test_copy_success_reads_updated_clipboard(self):
-        with patch.object(win_native.U, "GetClipboardSequenceNumber", side_effect=[20, 21]), \
+        with patch.object(win_native.U, "GetForegroundWindow", return_value=101), \
+             patch.object(win_native.U, "IsClipboardFormatAvailable", return_value=True), \
+             patch.object(win_native.U, "GetClipboardSequenceNumber", side_effect=[20, 21]), \
              patch.object(win_native.U, "GetAsyncKeyState", return_value=0), \
              patch.object(win_native.U, "SendInput", return_value=4), \
              patch.object(win_native, "clipboard_text", return_value="新文字"):
