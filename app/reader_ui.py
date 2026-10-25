@@ -279,7 +279,7 @@ class ReaderUI:
         app.voice_menu.pack(fill="x")
         for column, (title, variable, value, minimum, maximum, steps, attribute) in enumerate([
             ("语速", app.speed, app.speed_text, .75, 1.5, 15, "speed_slider"),
-            ("音量", app.volume, app.volume_text, 0, 1, 100, "volume_slider")], 1):
+            ("音量", app.volume, app.volume_text, 0, 1.5, 150, "volume_slider")], 1):
             group = ctk.CTkFrame(self.voice_controls, fg_color="transparent", width=140 if column == 1 else 124)
             group.grid(row=0, column=column, sticky="ew", padx=(0, 16) if column == 1 else 0)
             row = ctk.CTkFrame(group, fg_color="transparent")
@@ -295,6 +295,8 @@ class ReaderUI:
                 command=lambda _: app.playback_changed())
             slider.pack(fill="x", pady=(1, 3))
             setattr(app, attribute, slider)
+        self.volume_tooltip = Tooltip(app.volume_slider,
+            "音量 0–150%，朗读时即时生效；导出使用开始时的音量。\n100% 为原始音量，超过 100% 放大较小的声音，并柔和限制高峰。\n增益不等于等比例增加听感；声音本来很大时可调低。")
         self.voice_tooltip = Tooltip(app.voice_menu, "声音与语速在下次朗读生效；音量可即时调整。")
 
     def build_hotkeys(self, parent):

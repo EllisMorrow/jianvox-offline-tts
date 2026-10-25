@@ -64,8 +64,8 @@ class Preferences:
             raise ValueError("语气说明最多 500 字。")
         if not isinstance(self.speed, (float, int)) or not .75 <= self.speed <= 1.5:
             raise ValueError("语速范围为 0.75–1.50 倍。")
-        if not isinstance(self.volume, (float, int)) or not 0 <= self.volume <= 1:
-            raise ValueError("音量范围为 0–100%。")
+        if not isinstance(self.volume, (float, int)) or not 0 <= self.volume <= 1.5:
+            raise ValueError("音量范围为 0–150%。")
         self.hotkeys = validate_bindings(self.hotkeys)
         if not isinstance(self.priority_hotkeys, bool):
             raise ValueError("快捷键优先接管设置无效。")

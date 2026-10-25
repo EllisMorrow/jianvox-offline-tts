@@ -10,6 +10,7 @@
 - `app/win_native.py`、`hotkeys.py`、`startup.py`：Windows 集成和快捷键规则。
 - `app/priority_hotkeys.py`：可选的线程内键盘接管；回调只匹配设定组合并投递操作，不执行复制、推理或文件操作。
 - `app/mp3_export.py`、`tempo.py`：MP3 编码、磁盘错误检查与语速处理。
+- `app/audio_gain.py`：播放与导出共用的音量/增益处理，超过 100% 时柔和限幅。
 - `app/export_plan.py`：仅在内存中规划单文件/分章输出，文件名不使用原文，不保存续作状态。
 - `app/runtime_errors.py`：固定错误类别与安全提示；不保存异常正文或路径。
 - `app/export_estimate.py`：纯数值的文本分析、短样本选择和耗时范围；不访问模型、文件或设置。

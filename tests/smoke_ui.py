@@ -36,6 +36,16 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
         stdout.write(f"Window: {app.root.winfo_width()}x{app.root.winfo_height()}; editor: {app.text.winfo_width()}\n")
         assert app.text.winfo_width() > 300
         assert len(app.key_entries) == 3
+        with patch.object(app, "persist"):
+            assert app.volume_slider.cget("to") == 1.5
+            app.volume_slider.set(1.5)
+            app.playback_changed()
+            app.save_playback()
+            assert app.volume.get() == 1.5 and app.volume_text.get() == "150%"
+            assert app.preferences.volume == 1.5
+            app.volume_slider.set(.85)
+            app.playback_changed()
+            app.save_playback()
         app.default_keys()
         assert app.key_entries["read"].get() == "F4"
         original_editor = app.text

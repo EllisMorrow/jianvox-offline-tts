@@ -56,7 +56,7 @@ class PreferenceTests(unittest.TestCase):
     def test_settings_reject_out_of_bounds(self):
         for theme in ("light", "dark", "system"):
             self.assertEqual(Preferences(theme=theme).validate().theme, theme)
-        for kwargs in [{"speed": .5}, {"speed": 2}, {"volume": 1.1}, {"volume": -1}, {"voice": "unknown"}, {"theme": "automatic"}, {"theme": []}]:
+        for kwargs in [{"speed": .5}, {"speed": 2}, {"volume": 1.51}, {"volume": -1}, {"voice": "unknown"}, {"theme": "automatic"}, {"theme": []}]:
             with self.assertRaises(ValueError):
                 Preferences(**kwargs).validate()
         for value in (None, 1, "true"):
@@ -64,6 +64,15 @@ class PreferenceTests(unittest.TestCase):
                 Preferences(priority_hotkeys=value).validate()
             with self.assertRaises(ValueError):
                 Preferences(chaptered_export=value).validate()
+
+    def test_boosted_volume_roundtrip_keeps_other_preferences(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "settings.json"
+            prefs = Preferences(volume=1.5, voice="vivian", theme="dark", speed=1.25)
+            prefs.save(path)
+            self.assertEqual(Preferences.load(path), prefs)
+            for level in (0, .85, 1, 1.01, 1.5):
+                self.assertEqual(Preferences(volume=level).validate().volume, level)
 
 
 class TempoTests(unittest.TestCase):

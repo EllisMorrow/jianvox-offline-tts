@@ -13,6 +13,7 @@ from export_plan import build_export_plan, ExportPlan
 from model_worker import ModelClient, ModelFailure
 from audio_output import AudioOutput, AudioOutputError
 from runtime_errors import describe_error, RuntimeIssue
+from audio_gain import apply_volume
 
 ROOT = Path(__file__).resolve().parent
 os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
@@ -124,7 +125,7 @@ class AudioBuffer:
 
     def set_volume(self, volume):
         with self.lock:
-            self.volume = min(1.0, max(0.0, float(volume)))
+            self.volume = min(1.5, max(0.0, float(volume)))
 
     def put(self, number, wave):
         with self.lock:
@@ -160,7 +161,8 @@ class AudioBuffer:
                     self.current = self.chunks.popleft()
                     self.offset = 0
                 count = min(frames - position, len(self.current) - self.offset)
-                output[position:position+count, 0] = self.current[self.offset:self.offset+count] * self.volume
+                output[position:position+count, 0] = apply_volume(
+                    self.current[self.offset:self.offset+count], self.volume)
                 position += count
                 self.offset += count
                 if self.offset == len(self.current):
@@ -373,7 +375,7 @@ class Reader:
                     wave = tempo.process(wave)
                     if len(wave):
                         if writer:
-                            writer.write(wave * request.volume)
+                            writer.write(apply_volume(wave, request.volume))
                             now = time.perf_counter()
                             if now - last_activity >= .5:
                                 self.events.put(("export_activity", (
@@ -394,7 +396,7 @@ class Reader:
                 tail = tempo.process(np.empty(0, dtype=np.float32), final=True)
                 if len(tail):
                     if writer:
-                        writer.write(tail * request.volume)
+                        writer.write(apply_volume(tail, request.volume))
                     else:
                         self.audio.put(request.number, tail)
                 completed += len(part)

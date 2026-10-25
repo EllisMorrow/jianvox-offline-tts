@@ -4,7 +4,7 @@
 [![Windows checks](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml/badge.svg)](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**当前源码版本：v0.7.0 · Windows x64 · 中文优先 · NVIDIA GPU · 本地运行**
+**当前源码版本：v0.7.1 · Windows x64 · 中文优先 · NVIDIA GPU · 本地运行**
 
 Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播放；也支持把长文本导出为 MP3。Jian 取“笺”的拼音，Vox 意为声音；名称不绑定某个模型。
 
@@ -24,6 +24,7 @@ Windows 中文离线朗读工具：选字后按快捷键，即可边生成边播
 - 可选“优先接管已占用快捷键”，处理普通程序的占用冲突；只拦截设定组合，退出后释放。
 - 朗读选字、剪贴板或窗口文字；支持九位内置声音与语气描述。
 - 0.75–1.50 倍语速，使用流式 WSOLA 保持音调；语速和声音下次朗读生效，音量即时生效。
+- 音量支持 0–150%；100% 为原始音量，超过 100% 增益放大，并对接近满幅的高峰柔和限幅。MP3 使用开始导出时的音量。增益不保证完全无失真，声音原本较大时可调低。
 - 大文本分段生成 **MP3**，支持导出前时间预估、进度、剩余时间估算、自定义保存目录和取消。
 - 可选分章 MP3（约 3000 字/文件）：完成一章保存一章，后续失败或取消不会删除已完成的章节。
 - 默认播放设备变化时自动重连；模型异常由独立进程隔离，有限等待后恢复，设置页可手动重新加载声音。

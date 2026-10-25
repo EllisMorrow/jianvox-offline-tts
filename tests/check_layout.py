@@ -36,6 +36,8 @@ app = None
 try:
     with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts"), patch("reader_app.Preferences.load", return_value=Preferences()), patch.object(App, "estimate_export_time", create=True) as estimate:
         app = App(preview=True)
+        app.volume.set(1.5)
+        app.sync_labels()
         app.show()
         user = C.WinDLL("user32")
         user.GetDpiForWindow.argtypes, user.GetDpiForWindow.restype = [W.HWND], W.UINT
