@@ -5,7 +5,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 import numpy as np
-from reader_core import AudioBuffer, Reader, split_text
+from reader_core import AudioBuffer, Reader, check_cache_limit, check_generation_limit, split_text
 import win_native
 
 
@@ -17,10 +17,35 @@ class ReaderTests(unittest.TestCase):
         self.assertTrue(all(0 < len(p) <= 300 for p in parts))
         self.assertEqual(split_text("中文与 English 123。"), ["中文与 English 123。"])
 
+    def test_split_uses_english_sentence_and_word_boundaries(self):
+        sentence = "A" * 180 + ". " + "word " * 60
+        parts = split_text(sentence)
+        self.assertTrue(parts[0].endswith("."))
+        self.assertEqual("".join(parts), sentence.strip())
+        self.assertTrue(all(0 < len(part) <= 300 for part in parts))
+
+        numbers = "1234567890 " * 60
+        number_parts = split_text(numbers)
+        self.assertEqual("".join(number_parts), numbers.strip())
+        self.assertTrue(all(0 < len(part) <= 300 for part in number_parts))
+
     def test_reject_empty_and_oversize(self):
         for text in [" \n\t", "字" * 20001]:
             with self.assertRaises(ValueError):
                 split_text(text)
+
+    def test_generation_limit_is_reported_instead_of_silent_completion(self):
+        check_generation_limit({"total_steps_so_far": 1792})
+        with self.assertRaisesRegex(RuntimeError, "模型上限"):
+            check_generation_limit({"total_steps_so_far": 1800})
+
+    def test_cache_boundary_is_checked_from_graph_after_generation(self):
+        model = SimpleNamespace(talker_graph=SimpleNamespace(
+            cache_position=SimpleNamespace(item=lambda: 2045), max_seq_len=2048))
+        check_cache_limit(model)
+        model.talker_graph.cache_position = SimpleNamespace(item=lambda: 2046)
+        with self.assertRaisesRegex(RuntimeError, "触及模型缓存边界"):
+            check_cache_limit(model)
 
     def test_cancel_discards_queued_and_late_chunks(self):
         q = queue.Queue()
@@ -53,6 +78,116 @@ class ReaderTests(unittest.TestCase):
         reader.stop()
         self.assertIsNone(reader.pending)
         self.assertFalse(reader._active(2))
+
+    def test_probe_is_idle_only_bounded_and_cancel_has_terminal_event(self):
+        reader = Reader.__new__(Reader)
+        reader.events = queue.Queue()
+        reader.lock = threading.Lock()
+        reader.condition = threading.Condition(reader.lock)
+        reader.number, reader.pending, reader.ready, reader.closed = 0, None, True, False
+        reader.audio = AudioBuffer(reader.events)
+        number = reader.probe(" calibration\ttext ")
+        self.assertEqual(reader.pending.parts, ["calibration text"])
+        self.assertTrue(reader.pending.probe)
+        with self.assertRaises(ValueError):
+            reader.probe("another probe")
+        reader.stop()
+        self.assertIsNone(reader.pending)
+        self.assertIsNone(reader.probe_number)
+        with self.assertRaises(ValueError):
+            reader.probe("x" * 321)
+        number = reader.probe("x" * 320)
+        self.assertEqual(len(reader.pending.parts[0]), 320)
+        self.assertEqual(reader.pending.parts, ["x" * 320])
+        reader.stop()
+        messages = list(reader.events.queue)
+        self.assertEqual(sum(kind == "probe_cancelled" for kind, _ in messages), 2)
+
+    def test_submit_is_rejected_while_probe_is_pending(self):
+        reader = Reader.__new__(Reader)
+        reader.events = queue.Queue()
+        reader.lock = threading.Lock()
+        reader.condition = threading.Condition(reader.lock)
+        reader.number, reader.pending, reader.ready, reader.closed = 0, None, True, False
+        reader.audio = AudioBuffer(reader.events)
+        reader.probe("sample")
+        with self.assertRaises(ValueError):
+            reader.submit("while probing")
+
+    def test_probe_rejects_every_busy_reader_state(self):
+        reader = Reader.__new__(Reader)
+        reader.events = queue.Queue()
+        reader.lock = threading.Lock()
+        reader.condition = threading.Condition(reader.lock)
+        reader.number, reader.pending, reader.ready, reader.closed = 1, None, True, False
+        reader.audio = AudioBuffer(reader.events)
+        reader.export_number = None
+        reader.probe_number = None
+        for configure_busy in (
+            lambda: setattr(reader, "export_number", 2),
+            lambda: setattr(reader, "running_number", 2),
+            lambda: setattr(reader.audio, "active", True),
+        ):
+            configure_busy()
+            with self.assertRaises(ValueError):
+                reader.probe("sample")
+            reader.export_number = None
+            reader.running_number = None
+            reader.audio.active = False
+        reader.pending = SimpleNamespace(probe=False)
+        with self.assertRaises(ValueError):
+            reader.probe("sample")
+
+    def test_probe_worker_measures_raw_audio_without_gpu(self):
+        class FakeModel:
+            talker_graph = SimpleNamespace(cache_position=SimpleNamespace(item=lambda: 100), max_seq_len=2048)
+            def generate_custom_voice_streaming(self, **kwargs):
+                self.text = kwargs["text"]
+                yield np.ones(12000, dtype=np.float32), 24000, {}
+                yield np.ones(6000, dtype=np.float32), 24000, {}
+
+        reader = Reader.__new__(Reader)
+        reader.events = queue.Queue()
+        reader.lock = threading.Lock()
+        reader.condition = threading.Condition(reader.lock)
+        reader.number, reader.closed, reader.probe_number = 7, False, 7
+        reader.running_number, reader.pending, reader.ready = 7, None, True
+        reader.audio = AudioBuffer(reader.events)
+        request = SimpleNamespace(number=7, parts=["sample"], speaker="serena", style="", probe=True)
+        result = reader._run_probe_request(FakeModel(), request, np)
+        self.assertIsNotNone(result)
+        reader._finish_probe_request(request.number, result)
+        kind, data = reader.events.get_nowait()
+        self.assertEqual(kind, "probe_done")
+        self.assertEqual(data[0], 7)
+        self.assertAlmostEqual(data[2], .75)
+        self.assertGreaterEqual(data[1], 0)
+        self.assertIsNone(reader.probe_number)
+        self.assertTrue(reader.events.empty())
+        self.assertEqual(reader.probe("next"), 8)
+
+    def test_running_probe_cancel_emits_terminal_event_and_clears_guard(self):
+        class CancelModel:
+            def __init__(self, reader):
+                self.reader = reader
+
+            def generate_custom_voice_streaming(self, **kwargs):
+                yield np.ones(12000, dtype=np.float32), 24000, {}
+                self.reader.stop()
+
+        reader = Reader.__new__(Reader)
+        reader.events = queue.Queue()
+        reader.lock = threading.Lock()
+        reader.condition = threading.Condition(reader.lock)
+        reader.number, reader.closed, reader.pending, reader.probe_number = 8, False, None, 8
+        reader.audio = AudioBuffer(reader.events)
+        request = SimpleNamespace(number=8, parts=["sample"], speaker="serena", style="")
+        result = reader._run_probe_request(CancelModel(reader), request, np)
+        self.assertIsNone(result)
+        reader._finish_probe_request(request.number, result)
+        messages = list(reader.events.queue)
+        self.assertEqual(sum(kind == "probe_cancelled" and payload == 8 for kind, payload in messages), 1)
+        self.assertIsNone(reader.probe_number)
 
     def test_copy_timeout_does_not_read_old_clipboard(self):
         with patch.object(win_native.U, "GetClipboardSequenceNumber", return_value=20), \

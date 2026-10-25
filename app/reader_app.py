@@ -6,6 +6,8 @@ import sys
 sys.dont_write_bytecode = True
 import threading
 import time
+import math
+from collections import OrderedDict
 import tkinter as tk
 from tkinter import messagebox, filedialog
 from pathlib import Path
@@ -14,11 +16,17 @@ from settings import PROJECT, USER_SETTINGS, Preferences
 from privacy import clear_legacy_artifacts, quiet_runtime
 import startup
 from hotkeys import ACTION_NAMES, DEFAULT_HOTKEYS, validate_bindings
-from reader_core import Reader, VOICES
+from reader_core import Reader, VOICES, split_text
+from export_estimate import analyze_text, select_sample, Calibration, estimate_export
 from reader_ui import ReaderUI, BG, ACCENT
 from win_native import Native, clipboard_text, copy_selection, U
 
 from version import APP_NAME, VERSION
+
+THEME_CHOICES = {"白天": "light", "夜晚": "dark", "跟随系统": "system"}
+THEME_LABELS = {value: label for label, value in THEME_CHOICES.items()}
+ERROR_COLOR = ("#B24B55", "#F397A1")
+SUCCESS_COLOR = ("#329678", "#69CBA9")
 
 
 class App:
@@ -34,7 +42,7 @@ class App:
             return
         if not demo:
             clear_legacy_artifacts()
-        ctk.set_appearance_mode("light")
+        ctk.set_appearance_mode(self.preferences.theme)
         self.root = ctk.CTk(fg_color=BG)
         self.background_start = start_hidden
         if start_hidden:
@@ -50,6 +58,9 @@ class App:
         self.exporting = False
         self.export_id = None
         self.export_summary = "正在估算剩余时间"
+        self.estimating = False
+        self.estimate_id = self.estimate_token = self.estimate_job = None
+        self.calibrations = OrderedDict()  # Session-only numerical measurements; never store source text.
         self.startup_enabled = tk.BooleanVar(value=False if demo else startup.is_enabled())
         if self.startup_enabled.get() and not preview:
             try:
@@ -57,6 +68,7 @@ class App:
             except OSError:
                 self.events.put(("error", "开机启动路径未能更新，请重新切换自启开关。"))
         self.export_directory = tk.StringVar(value=self.preferences.export_directory)
+        self.theme = tk.StringVar(value=THEME_LABELS[self.preferences.theme])
         self.status = tk.StringVar(value="正在准备声音…" if not preview else "界面演示 · 未加载模型")
         self.hint = tk.StringVar()
         self.voice = tk.StringVar(value=next(k for k, v in VOICES.items() if v == self.preferences.voice))
@@ -127,6 +139,9 @@ class App:
             self.show_error(f"开机启动设置失败：{exc}")
 
     def export_mp3(self):
+        if self.exporting or self.estimating:
+            self.show_error("请先停止当前导出或预估，再开始新的导出。")
+            return
         if not self.reader or not self.reader.ready:
             self.show_error("请等待声音准备完成。")
             return
@@ -154,12 +169,78 @@ class App:
             self.export_directory.set(self.preferences.export_directory)
             self.persist()
             self.export_button.configure(state="disabled")
+            self.estimate_button.configure(state="disabled")
             self.pause_button.configure(state="disabled")
             self.ui.show_export_progress()
             self.export_progress.set(0)
             self.status.set("正在导出 MP3，准备第一段… 可点击停止取消。")
         except (OSError, ValueError) as exc:
             self.show_error(str(exc))
+
+    def estimate_export_time(self):
+        if not self.reader or not self.reader.ready:
+            self.show_error("请等待声音准备完成。")
+            return
+        audio = getattr(self.reader, "audio", None)
+        if (self.exporting or self.estimating or getattr(audio, "active", False)
+                or getattr(self.reader, "running_number", None) is not None
+                or getattr(self.reader, "pending", None) is not None):
+            self.show_error("请先停止当前朗读或导出，再预估时间。")
+            return
+        text = self.text.get("1.0", "end").strip()
+        if not text:
+            self.show_error("请先粘贴需要预估的文字。")
+            return
+        self.save_playback()
+        self.estimating = True
+        self.estimate_token = token = object()
+        self.export_button.configure(state="disabled")
+        self.estimate_button.configure(state="disabled")
+        self.pause_button.configure(state="disabled")
+        self.status.set("正在分析文字… 可点击停止取消。")
+        voice, style, speed = self.preferences.voice, self.preferences.style, self.preferences.speed
+        def prepare():
+            try:
+                parts = split_text(text, max_chars=1_000_000)
+                analysis = analyze_text(text, parts=parts)
+                sample = select_sample(text, parts=parts)
+                self.events.put(("estimate_prepared", (token, analysis, sample, voice, style, speed)))
+            except ValueError as exc:
+                self.events.put(("estimate_error", (token, str(exc))))
+        threading.Thread(target=prepare, name="export-analysis", daemon=True).start()
+
+    def finish_estimate(self):
+        self.estimating = False
+        self.estimate_id = self.estimate_token = self.estimate_job = None
+        self.estimate_button.configure(state="normal")
+        self.export_button.configure(state="disabled" if self.exporting else "normal")
+        self.pause_button.configure(state="disabled" if self.exporting else "normal")
+
+    @staticmethod
+    def time_range(value):
+        def display(seconds):
+            seconds = max(1, math.ceil(seconds))
+            if seconds >= 3600:
+                return f"{seconds // 3600} 小时 {(seconds % 3600) // 60} 分"
+            if seconds >= 60:
+                return f"{seconds // 60} 分 {seconds % 60} 秒"
+            return f"{seconds} 秒"
+        return f"{display(value.lower)} – {display(value.upper)}"
+
+    def show_estimate(self, analysis, calibration, speed):
+        result = estimate_export(analysis, calibration=calibration, speed=speed)
+        self.finish_estimate()
+        self.status.set(f"预计导出用时 {self.time_range(result.total_seconds)}（参考范围）。")
+        messagebox.showinfo("MP3 导出时间预估", (
+            f"文字：{analysis.characters:,} 字 · {analysis.segments:,} 段\n"
+            f"语速：{speed:.2f}×（按点击时的声音与语气估算）\n"
+            f"预计导出用时：{self.time_range(result.total_seconds)}\n"
+            f"预计音频时长：{self.time_range(result.audio_seconds)}\n"
+            f"建议磁盘可用空间：约 {max(1, math.ceil(result.disk_bytes_upper / 1048576)):,} MB\n\n"
+            "基于本机短样本推算，不包含模型启动和本次探测时间。"
+            "正文类型、停顿、显卡负载及长时间运行都会影响实际耗时，范围仅供参考。\n\n"
+            "样本不播放、不保存；测量数据仅保留到程序退出。"
+        ), parent=self.root)
 
     def defer_save(self):
         if self.save_timer:
@@ -183,6 +264,15 @@ class App:
         except (OSError, ValueError) as exc:
             logging.exception("Preference save failed")
             self.show_error(f"设置未能保存：{exc}")
+
+    def change_theme(self, choice):
+        theme = THEME_CHOICES.get(choice)
+        if theme is None:
+            raise ValueError("请选择有效的界面主题。")
+        ctk.set_appearance_mode(theme)
+        self.theme.set(choice)
+        self.preferences.theme = theme
+        self.persist()
 
     def playback_changed(self):
         self.sync_labels()
@@ -212,7 +302,7 @@ class App:
         try:
             bindings = validate_bindings({k: v.get() for k, v in self.key_entries.items()})
         except ValueError as exc:
-            self.key_status.configure(text=str(exc), text_color="#B24B55")
+            self.key_status.configure(text=str(exc), text_color=ERROR_COLOR)
             return
         if self.native:
             self.key_save.configure(state="disabled")
@@ -222,6 +312,9 @@ class App:
 
     def read(self, text, started=None):
         if not self.reader:
+            return
+        if self.estimating:
+            self.show_error("请先停止时间预估，再开始朗读。")
             return
         try:
             self.save_playback()
@@ -236,6 +329,9 @@ class App:
             self.show_error(str(exc))
 
     def read_clipboard(self):
+        if self.exporting or self.estimating:
+            self.show_error("请先停止当前导出或预估，再朗读剪贴板。")
+            return
         try:
             self.read(clipboard_text(clear_after=True))
         except (ValueError, OSError) as exc:
@@ -244,6 +340,9 @@ class App:
     def selection(self, started):
         if not self.reader or not self.reader.ready:
             self.show_error("声音仍在准备中，请等待“已就绪”。")
+            return
+        if self.exporting or self.estimating:
+            self.show_error("请先停止当前导出或预估，再朗读选中文字。")
             return
         if not self.copy_lock.acquire(blocking=False):
             return
@@ -260,6 +359,8 @@ class App:
         threading.Thread(target=task, daemon=True).start()
 
     def stop(self):
+        if self.estimating:
+            self.finish_estimate()  # Ignore a late analysis result without retaining its text.
         if self.reader:
             self.reader.stop()
 
@@ -271,7 +372,7 @@ class App:
 
     def show_error(self, text):
         self.status.set(text)
-        self.dot.configure(text_color="#B24B55")
+        self.dot.configure(text_color=ERROR_COLOR)
         if not self.background_start:
             self.show()
 
@@ -290,7 +391,8 @@ class App:
     def poll(self):
         changed = False
         try:
-            while True:
+            # Yield to native paint/input even if many worker events arrive together.
+            for _ in range(100):
                 kind, data = self.events.get_nowait()
                 changed = True
                 if kind == "read_selection":
@@ -315,12 +417,12 @@ class App:
                         self.preferences.hotkeys = dict(self.hotkeys)
                         self.persist()
                         self.sync_labels()
-                        self.key_status.configure(text="快捷键已生效。", text_color="#27765C")
+                        self.key_status.configure(text="快捷键已生效。", text_color=SUCCESS_COLOR)
                         for action, entry in self.key_entries.items():
                             entry.delete(0, "end")
                             entry.insert(0, self.hotkeys[action])
                     else:
-                        self.key_status.configure(text=data["error"], text_color="#B24B55")
+                        self.key_status.configure(text=data["error"], text_color=ERROR_COLOR)
                         self.show_error(data["error"])
                 elif kind == "tray_error":
                     self.tray_ok = False
@@ -329,11 +431,48 @@ class App:
                     self.status.set(data)
                 elif kind == "ready":
                     self.status.set("已就绪，随时可以开始朗读。")
-                    self.dot.configure(text_color="#329678")
+                    self.dot.configure(text_color=SUCCESS_COLOR)
+                elif kind == "estimate_error" and data[0] is self.estimate_token:
+                    self.finish_estimate()
+                    self.show_error(data[1])
+                elif kind == "estimate_prepared" and data[0] is self.estimate_token:
+                    token, analysis, sample, voice, style, speed = data
+                    # An English article can open with a Chinese introduction.
+                    # Cache by the language actually measured, not the whole article.
+                    key = (voice, style, sample.analysis.language_category)
+                    calibration = self.calibrations.get(key)
+                    if calibration is not None:
+                        self.calibrations.move_to_end(key)
+                        self.show_estimate(analysis, calibration, speed)
+                    else:
+                        try:
+                            self.estimate_job = (analysis, sample.analysis, key, speed)
+                            self.estimate_id = self.reader.probe(sample.text, voice, style)
+                            self.status.set("正在生成短样本估时，不播放、不保存… 可点击停止取消。")
+                        except ValueError as exc:
+                            self.finish_estimate()
+                            self.show_error(str(exc))
+                elif kind == "probe_done" and data[0] == self.estimate_id and data[0] == self.reader.number:
+                    analysis, sample_analysis, key, speed = self.estimate_job
+                    try:
+                        calibration = Calibration(sample_analysis, data[1], data[2])
+                        self.calibrations[key] = calibration
+                        self.calibrations.move_to_end(key)
+                        while len(self.calibrations) > 8:
+                            self.calibrations.popitem(last=False)
+                        self.show_estimate(analysis, calibration, speed)
+                    except ValueError as exc:
+                        self.finish_estimate()
+                        self.show_error(str(exc))
+                elif kind == "probe_cancelled" and data == self.estimate_id:
+                    self.finish_estimate()
+                    if self.status.get().startswith("正在"):
+                        self.status.set("时间预估已取消。")
                 elif kind == "error":
                     self.show_error(data)
                 elif kind == "stopped":
-                    self.status.set("正在停止导出并清理临时音频…" if self.exporting else "已停止，可以开始新的朗读。")
+                    self.status.set("正在停止导出并清理临时音频…" if self.exporting else
+                                    "正在停止时间预估…" if self.estimating else "已停止，可以开始新的朗读。")
                     self.pause_button.configure(text="暂停")
                 elif kind == "paused" and data[0] == self.reader.number:
                     self.status.set("已暂停，再按暂停键或点击继续即可接着朗读。" if data[1] else "正在继续朗读…")
@@ -345,7 +484,7 @@ class App:
                 elif kind == "played" and data[0] == self.reader.number:
                     self.metrics["buffer_gaps"] = data[1]
                     self.status.set("朗读完成，随时可以继续。")
-                    self.dot.configure(text_color="#329678")
+                    self.dot.configure(text_color=SUCCESS_COLOR)
                     self.pause_button.configure(text="暂停")
                     self.clear_completed_text(data[0])
                 elif kind == "export_progress" and data[0] == self.export_id:
@@ -361,6 +500,7 @@ class App:
                         self.exporting = False
                         self.export_id = None
                         self.export_button.configure(state="normal")
+                        self.estimate_button.configure(state="normal")
                         self.pause_button.configure(state="normal", text="暂停")
                         self.ui.hide_export_progress()
                         if kind == "export_done":
@@ -384,6 +524,8 @@ class App:
         if self.native:
             self.native.close()
         self.clear_text()
+        self.calibrations.clear()
+        self.estimate_token = self.estimate_job = None
         self.root.withdraw()
         self.exit_started = time.monotonic()
         self.finish_exit()

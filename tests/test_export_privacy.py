@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import subprocess
 import sys
+from types import SimpleNamespace
 from unittest.mock import patch
 import numpy as np
 import soundfile as sf
@@ -47,6 +48,16 @@ class ExportTests(unittest.TestCase):
                 export.write(self.wave())
                 with self.assertRaises(ExportCancelled):
                     export.commit(lambda: False)
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+
+    def test_insufficient_space_before_publish_closes_temp_and_creates_no_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audio.mp3"
+            with patch("mp3_export.shutil.disk_usage", return_value=SimpleNamespace(free=0)):
+                with self.assertRaisesRegex(OSError, "空间不足"):
+                    with MP3Export(path) as export:
+                        export.write(self.wave())
+                        export.commit(lambda: True)
             self.assertEqual(list(Path(tmp).iterdir()), [])
 
     def test_existing_file_preserved(self):

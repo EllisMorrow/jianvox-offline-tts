@@ -1,5 +1,6 @@
 """Stream to an OS-cleaned temporary file; publish only after successful completion."""
 from pathlib import Path
+import shutil
 import tempfile
 import soundfile as sf
 
@@ -37,6 +38,17 @@ class MP3Export:
     def commit(self, active):
         self.writer.close()
         self.writer = None
+        try:
+            self.temp.seek(0, 2)
+            encoded_size = self.temp.tell()
+            free_bytes = shutil.disk_usage(self.target.parent).free
+            margin = max(16 * 1024 * 1024, encoded_size // 20)
+            if free_bytes < encoded_size + margin:
+                raise OSError("保存目录剩余空间不足，无法安全完成 MP3 文件提交。")
+        except Exception:
+            self.temp.close()
+            self.temp = None
+            raise
         self.temp.seek(0)
         created = False
         try:

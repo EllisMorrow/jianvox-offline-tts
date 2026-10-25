@@ -7,6 +7,8 @@
 - `app/reader_core.py`：单个模型工作线程、流式生成、播放与导出调度。
 - `app/win_native.py`、`hotkeys.py`、`startup.py`：Windows 集成和快捷键规则。
 - `app/mp3_export.py`、`tempo.py`：MP3 编码与语速处理。
+- `app/export_estimate.py`：纯数值的文本分析、短样本选择和耗时范围；不访问模型、文件或设置。
+- `app/ui_tooltip.py`：临时悬浮说明，不保存使用状态。
 - `app/settings.py`、`privacy.py`：设置位置、迁移和应用自身的隐私边界。
 - `assets/`：项目自制图标。
 - `scripts/`：下载、离线安装及源码打包工具与固定清单。

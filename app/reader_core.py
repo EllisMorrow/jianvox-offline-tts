@@ -34,13 +34,37 @@ def split_text(text: str, limit: int = 300, max_chars: int = 20000) -> list[str]
     start = 0
     while start < len(text):
         window = text[start:start+limit]
-        candidates = [m.end() for m in re.finditer(r"[。！？!?；;\n]", window)]
-        cut = candidates[-1] if len(window) == limit and candidates and candidates[-1] >= limit // 3 else len(window)
-        part = window[:cut].strip()
+        cut = len(window)
+        if len(window) == limit:
+            sentence_ends = [m.end() for m in re.finditer(r"[。！？!?；;]|[.!?](?=\s|$)", window)]
+            safe_cut = sentence_ends[-1] if sentence_ends else 0
+            if safe_cut < limit // 3:
+                whitespace_ends = [m.end() for m in re.finditer(r"\s+", window)]
+                safe_cut = whitespace_ends[-1] if whitespace_ends else 0
+            if safe_cut >= limit // 3:
+                cut = safe_cut
+        part = window[:cut]
         if part:
             parts.append(part)
         start += cut
     return parts
+
+
+def check_generation_limit(metadata: dict, limit: int = 1800) -> None:
+    if metadata.get("total_steps_so_far", 0) >= limit:
+        raise GenerationLimitError("单段声音生成达到模型上限，请缩短这段文字后重试。")
+
+
+def check_cache_limit(model) -> None:
+    # The pinned backend exposes the last graph position but no EOS reason.
+    # Conservatively refuse boundary-touching output instead of claiming completeness.
+    graph = model.talker_graph
+    if int(graph.cache_position.item()) >= graph.max_seq_len - 2:
+        raise GenerationLimitError("单段声音触及模型缓存边界，无法确认完整，请缩短文字后重试。")
+
+
+class GenerationLimitError(RuntimeError):
+    pass
 
 
 @dataclass
@@ -53,6 +77,7 @@ class Request:
     speed: float = 1.0
     output: Path | None = None
     volume: float = .85
+    probe: bool = False
 
 
 class AudioBuffer:
@@ -161,6 +186,8 @@ class Reader:
         self.closed = False
         self.ready = False
         self.export_number = None
+        self.probe_number = None
+        self.running_number = None
         self.audio = AudioBuffer(events)
         self.stream = None
         self.model_path = model_path or model_directory()
@@ -172,8 +199,9 @@ class Reader:
         if not .75 <= speed <= 1.5:
             raise ValueError("语速范围为 0.75–1.50 倍。")
         with self.condition:
-            if getattr(self, "export_number", None) is not None:
-                raise ValueError("正在导出音频，请先停止导出，再开始新的朗读或导出。")
+            if (getattr(self, "export_number", None) is not None
+                    or getattr(self, "probe_number", None) is not None):
+                raise ValueError("正在导出或估算音频，请等待完成或停止后再开始。")
             if not self.ready:
                 raise ValueError("声音仍在准备中，请等待窗口显示“已就绪”。")
             self.number += 1
@@ -186,12 +214,39 @@ class Reader:
             self.condition.notify()
         return request.number
 
+    def probe(self, text, speaker="serena", style=DEFAULT_STYLE):
+        normalized = re.sub(r"[\t\r ]+", " ", text).strip()
+        if not normalized:
+            raise ValueError("没有可用于估算的文字。")
+        if len(normalized) > 320:
+            raise ValueError("估算文字最多 320 字。")
+        with self.condition:
+            if (not self.ready or getattr(self, "export_number", None) is not None
+                    or getattr(self, "probe_number", None) is not None
+                    or self.pending is not None or getattr(self, "running_number", None) is not None):
+                raise ValueError("请在没有朗读或导出任务时进行估算。")
+            with self.audio.lock:
+                if self.audio.active:
+                    raise ValueError("请在没有朗读或导出任务时进行估算。")
+                self.number += 1
+                request = Request(self.number, [normalized], speaker, style,
+                                  time.perf_counter(), output=None, probe=True)
+                self.probe_number = request.number
+                self.pending = request
+                self.condition.notify()
+        return request.number
+
     def stop(self):
         with self.condition:
             pending_export = self.pending and self.pending.output
+            pending_probe = self.pending and getattr(self.pending, "probe", False)
             if pending_export:
                 self.events.put(("export_cancelled", self.pending.number))
                 self.export_number = None
+            if pending_probe:
+                self.events.put(("probe_cancelled", self.pending.number))
+                self.probe_number = None
+                self.pending.parts.clear()
             self.number += 1
             self.pending = None
             self.audio.begin(self.number, time.perf_counter(), active=False)
@@ -213,6 +268,46 @@ class Reader:
     def _active(self, number):
         with self.lock:
             return not self.closed and self.number == number
+
+    def _run_probe_request(self, model, request, np):
+        started = time.perf_counter()
+        audio_seconds = 0.0
+        for part in request.parts:
+            if not self._active(request.number):
+                break
+            iterator = model.generate_custom_voice_streaming(
+                text=part, speaker=request.speaker, language="Auto",
+                instruct=request.style, chunk_size=8, max_new_tokens=1800,
+                temperature=0.7, top_p=0.95)
+            try:
+                for wave, rate, metadata in iterator:
+                    if not self._active(request.number):
+                        break
+                    check_generation_limit(metadata)
+                    if rate != 24000:
+                        raise RuntimeError(f"声音采样率与播放设备不匹配：{rate}")
+                    wave = np.asarray(wave, dtype=np.float32).reshape(-1)
+                    if not np.isfinite(wave).all():
+                        raise RuntimeError("模型生成了无效声音，请重试。")
+                    audio_seconds += len(wave) / rate
+            finally:
+                iterator.close()
+        if self._active(request.number):
+            check_cache_limit(model)
+            return time.perf_counter()-started, audio_seconds
+        return None
+
+    def _finish_probe_request(self, number, result):
+        with self.condition:
+            active = not self.closed and self.number == number
+            if getattr(self, "running_number", None) == number:
+                self.running_number = None
+            if getattr(self, "probe_number", None) == number:
+                self.probe_number = None
+            if result is not None and active:
+                self.events.put(("probe_done", (number, *result)))
+            else:
+                self.events.put(("probe_cancelled", number))
 
     def _run(self):
         try:
@@ -257,69 +352,84 @@ class Reader:
                         break
                     request = self.pending
                     self.pending = None
-                self.events.put(("generating", (request.number, sum(map(len, request.parts)))))
+                    self.running_number = request.number
+                is_probe = getattr(request, "probe", False)
+                if not is_probe:
+                    self.events.put(("generating", (request.number, sum(map(len, request.parts)))))
                 started = time.perf_counter()
                 completed = 0
                 total = sum(map(len, request.parts))
                 exported = False
+                probe_result = None
                 try:
-                    with ExitStack() as stack, torch.inference_mode():
-                        writer = stack.enter_context(MP3Export(request.output)) if request.output else None
-                        for part_index, part in enumerate(request.parts, 1):
-                            if not self._active(request.number):
-                                break
-                            tempo = Tempo(request.speed)
-                            iterator = model.generate_custom_voice_streaming(
-                                text=part, speaker=request.speaker, language="Auto",
-                                instruct=request.style, chunk_size=8, max_new_tokens=1800,
-                                temperature=0.7, top_p=0.95)
-                            try:
-                                for wave, rate, _ in iterator:
-                                    if not self._active(request.number):
-                                        break
-                                    if rate != 24000:
-                                        raise RuntimeError(f"声音采样率与播放设备不匹配：{rate}")
-                                    wave = np.asarray(wave, dtype=np.float32).reshape(-1)
-                                    if not np.isfinite(wave).all():
-                                        raise RuntimeError("模型生成了无效声音，请重试。")
-                                    wave = tempo.process(wave)
-                                    if len(wave):
+                    if is_probe:
+                        with torch.inference_mode():
+                            probe_result = self._run_probe_request(model, request, np)
+                    else:
+                        with ExitStack() as stack, torch.inference_mode():
+                            writer = stack.enter_context(MP3Export(request.output)) if request.output else None
+                            last_activity = 0.0
+                            for part_index, part in enumerate(request.parts, 1):
+                                if not self._active(request.number):
+                                    break
+                                tempo = Tempo(request.speed)
+                                iterator = model.generate_custom_voice_streaming(
+                                    text=part, speaker=request.speaker, language="Auto",
+                                    instruct=request.style, chunk_size=8, max_new_tokens=1800,
+                                    temperature=0.7, top_p=0.95)
+                                try:
+                                    for wave, rate, metadata in iterator:
+                                        if not self._active(request.number):
+                                            break
+                                        check_generation_limit(metadata)
+                                        if rate != 24000:
+                                            raise RuntimeError(f"声音采样率与播放设备不匹配：{rate}")
+                                        wave = np.asarray(wave, dtype=np.float32).reshape(-1)
+                                        if not np.isfinite(wave).all():
+                                            raise RuntimeError("模型生成了无效声音，请重试。")
+                                        wave = tempo.process(wave)
+                                        if len(wave):
+                                            if writer:
+                                                writer.write(wave * request.volume)
+                                                now = time.perf_counter()
+                                                if now - last_activity >= .5:
+                                                    self.events.put(("export_activity", (request.number, part_index, len(request.parts))))
+                                                    last_activity = now
+                                            else:
+                                                self.audio.put(request.number, wave)
+                                        # Bound audio memory for long selections; stop/new requests wake this promptly.
+                                        while not writer and self.audio.seconds() > 8 and self._active(request.number):
+                                            with self.condition:
+                                                self.condition.wait(timeout=0.05)
+                                finally:
+                                    iterator.close()
+                                if self._active(request.number):
+                                    check_cache_limit(model)
+                                    tail = tempo.process(np.empty(0, dtype=np.float32), final=True)
+                                    if len(tail):
                                         if writer:
-                                            writer.write(wave * request.volume)
-                                            self.events.put(("export_activity", (request.number, part_index, len(request.parts))))
+                                            writer.write(tail * request.volume)
                                         else:
-                                            self.audio.put(request.number, wave)
-                                    # Bound audio memory for long selections; stop/new requests wake this promptly.
-                                    while not writer and self.audio.seconds() > 8 and self._active(request.number):
-                                        with self.condition:
-                                            self.condition.wait(timeout=0.05)
-                            finally:
-                                iterator.close()
-                            if self._active(request.number):
-                                tail = tempo.process(np.empty(0, dtype=np.float32), final=True)
-                                if len(tail):
+                                            self.audio.put(request.number, tail)
+                                    completed += len(part)
                                     if writer:
-                                        writer.write(tail * request.volume)
-                                    else:
-                                        self.audio.put(request.number, tail)
-                                completed += len(part)
+                                        elapsed = time.perf_counter() - started
+                                        eta = elapsed * (total-completed) / max(1, completed)
+                                        self.events.put(("export_progress", (request.number, completed, total, eta)))
+                            if self._active(request.number):
                                 if writer:
-                                    elapsed = time.perf_counter() - started
-                                    eta = elapsed * (total-completed) / max(1, completed)
-                                    self.events.put(("export_progress", (request.number, completed, total, eta)))
-                        if self._active(request.number):
-                            if writer:
-                                writer.commit(lambda: self._active(request.number))
-                                exported = True
-                            else:
-                                self.audio.end(request.number)
-                                self.events.put(("generated", (request.number, time.perf_counter()-started)))
+                                    writer.commit(lambda: self._active(request.number))
+                                    exported = True
+                                else:
+                                    self.audio.end(request.number)
+                                    self.events.put(("generated", (request.number, time.perf_counter()-started)))
                 except ExportCancelled:
                     pass
                 except Exception as exc:
                     if self._active(request.number):
                         self.stop()
-                        self.events.put(("error", f"本次处理失败：{type(exc).__name__}。请检查保存目录与磁盘空间，或重试。"))
+                        detail = str(exc) if isinstance(exc, GenerationLimitError) else type(exc).__name__
+                        self.events.put(("error", f"本次处理失败：{detail}。请检查保存目录与磁盘空间，或重试。"))
                 finally:
                     if request.output:
                         with self.condition:
@@ -329,8 +439,15 @@ class Reader:
                             self.events.put(("export_done", (request.number, str(request.output))))
                         else:
                             self.events.put(("export_cancelled", request.number))
+                    request_number = request.number
                     request.parts.clear()
                     request = part = iterator = wave = tail = tempo = writer = None
+                    if is_probe:
+                        self._finish_probe_request(request_number, probe_result)
+                    else:
+                        with self.condition:
+                            if getattr(self, "running_number", None) == request_number:
+                                self.running_number = None
         except Exception as exc:
             logging.exception("Reader initialization failed")
             self.events.put(("error", f"启动失败：{exc}"))

@@ -4,7 +4,8 @@ import tempfile
 import time
 from pathlib import Path
 import soundfile as sf
-from reader_core import Reader
+from reader_core import Reader, split_text
+from export_estimate import select_sample, analyze_text, Calibration, estimate_export
 from win_native import Native, U
 from hotkeys import DEFAULT_HOTKEYS
 
@@ -39,11 +40,28 @@ try:
     reader = Reader(events)
     wait_for("ready")
     text = "今天的天气很好，窗外有微风，树叶随着风轻轻摇动。我们不必急着完成所有事情，可以先整理思路，再从最重要的一件事开始。遇到不明白的地方，停下来想一想，也可以换个角度看待问题。把事情一步一步做好，往往比匆忙赶路更有效。" * 3
+    sample = select_sample(text)
+    number = reader.probe(sample.text)
+    _, generation, duration = wait_for("probe_done", number)
+    assert generation > 0 and duration > 0
+    assert not reader.audio.active and reader.audio.seconds() == 0
+    assert reader.probe_number is None and reader.running_number is None
+    estimate = estimate_export(analyze_text(text, split_text(text)),
+        Calibration(sample.analysis, generation, duration), speed=1.25)
+    print(f"PROBE_CHECK_PASSED: {len(sample.text)} sample chars; {generation:.2f}s generation; {duration:.2f}s audio; export range {estimate.total_seconds.lower:.2f}–{estimate.total_seconds.upper:.2f}s", flush=True)
+    number = reader.probe(sample.text)
+    time.sleep(.3)
+    reader.stop()
+    wait_for("probe_cancelled", number)
+    assert reader.probe_number is None and reader.running_number is None
+    print("PROBE_CANCELLATION_CHECK_PASSED", flush=True)
     with tempfile.TemporaryDirectory(prefix="qwen-export-check-") as tmp:
         target = Path(tmp) / "分段验证.mp3"
+        started = time.perf_counter()
         number = reader.submit(text, speed=1.25, output=target)
         wait_for("export_done", number)
         info = sf.info(target)
+        print(f"EXPORT_ELAPSED: {time.perf_counter()-started:.2f}s", flush=True)
         assert info.format == "MP3" and info.frames > 24000 * 20
         assert reader.export_number is None
         assert list(Path(tmp).iterdir()) == [target]

@@ -47,6 +47,7 @@ def model_directory():
 class Preferences:
     voice: str = "serena"
     style: str = DEFAULT_STYLE
+    theme: str = "system"
     speed: float = 1.0
     volume: float = 0.85
     hotkeys: dict = field(default_factory=lambda: dict(DEFAULT_HOTKEYS))
@@ -55,6 +56,8 @@ class Preferences:
     def validate(self):
         if self.voice not in {"serena", "vivian", "uncle_fu", "dylan", "eric", "ryan", "aiden", "ono_anna", "sohee"}:
             raise ValueError("请选择有效的声音。")
+        if not isinstance(self.theme, str) or self.theme not in {"light", "dark", "system"}:
+            raise ValueError("请选择有效的界面主题。")
         if not isinstance(self.style, str) or len(self.style) > 500:
             raise ValueError("语气说明最多 500 字。")
         if not isinstance(self.speed, (float, int)) or not .75 <= self.speed <= 1.5:

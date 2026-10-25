@@ -24,10 +24,17 @@ class PreferenceTests(unittest.TestCase):
     def test_settings_roundtrip_excludes_text(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"
-            prefs = Preferences(speed=1.25, volume=.4, hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
+            prefs = Preferences(theme="dark", speed=1.25, volume=.4, hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
             prefs.save(path)
             self.assertEqual(Preferences.load(path), prefs)
-            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "speed", "volume", "hotkeys", "export_directory"})
+            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "export_directory"})
+
+    def test_legacy_settings_default_to_system_theme(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "settings.json"
+            path.write_text('{"voice":"serena","speed":1.1}', "utf-8")
+            self.assertEqual(Preferences.load(path).theme, "system")
+            self.assertEqual(path.read_text("utf-8"), '{"voice":"serena","speed":1.1}')
 
     def test_blank_hotkeys_are_independently_disabled(self):
         empty = {action: "" for action in DEFAULT_HOTKEYS}
@@ -44,7 +51,9 @@ class PreferenceTests(unittest.TestCase):
             self.assertEqual(path.read_text("utf-8"), original)
 
     def test_settings_reject_out_of_bounds(self):
-        for kwargs in [{"speed": .5}, {"speed": 2}, {"volume": 1.1}, {"volume": -1}, {"voice": "unknown"}]:
+        for theme in ("light", "dark", "system"):
+            self.assertEqual(Preferences(theme=theme).validate().theme, theme)
+        for kwargs in [{"speed": .5}, {"speed": 2}, {"volume": 1.1}, {"volume": -1}, {"voice": "unknown"}, {"theme": "automatic"}, {"theme": []}]:
             with self.assertRaises(ValueError):
                 Preferences(**kwargs).validate()
 
