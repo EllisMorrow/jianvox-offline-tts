@@ -12,7 +12,8 @@ FIXED = ["README.md", "CHANGELOG.md", "LICENSE", "THIRD_PARTY.md", ".gitignore",
 PATTERNS = {"app": ("*.py",), "scripts": ("*.py", "*.ps1", "*.json", "requirements*.txt"),
             "tests": ("*.py",), "docs": ("*.md",), ".github/workflows": ("*.yml",),
             "assets": ("app.svg", "app.ico", "app.png"),
-            "docs/screenshots": ("reader.png", "hotkeys.png")}
+            "docs/screenshots": ("reader.png", "hotkeys.png"),
+            "docs/illustrations": ("reading-flow.png",)}
 
 
 def release_files(root=ROOT):
