@@ -377,6 +377,14 @@ class ReaderUI:
                       command=app.change_startup, fg_color=TRACK, progress_color=PRIMARY_FILL,
                       button_color=("#FFFFFF", "#ECECF4"), button_hover_color=("#F5F5FB", "#FFFFFF"),
                       text_color=INK, text_color_disabled=DISABLED, font=self.font()).pack(anchor="w", padx=18, pady=(0, 17))
+        app.close_to_tray_switch = ctk.CTkSwitch(
+            general, text="点击关闭按钮后进入系统托盘", variable=app.close_to_tray,
+            command=app.change_close_to_tray, fg_color=TRACK, progress_color=PRIMARY_FILL,
+            button_color=("#FFFFFF", "#ECECF4"), button_hover_color=("#F5F5FB", "#FFFFFF"),
+            text_color=INK, text_color_disabled=DISABLED, font=self.font())
+        app.close_to_tray_switch.pack(anchor="w", padx=18, pady=(0, 7))
+        self.label(general, "开启后在后台继续运行；关闭此项后，点击 × 将退出程序、停止任务并清空窗口文字。",
+                   11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 17))
         privacy = self.card(panel)
         privacy.grid(row=3, column=0, sticky="ew", pady=(0, 5))
         self.label(privacy, "隐私与设置文件", 14, True).pack(anchor="w", padx=18, pady=(16, 8))

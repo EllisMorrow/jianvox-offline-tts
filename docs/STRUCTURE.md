@@ -8,6 +8,7 @@
 - `app/model_worker.py`：单个持久模型子进程、本机有界通信、取消、故障恢复和主程序退出联动回收。
 - `app/audio_output.py`：独立管理线程拥有唯一音频流，通过 Windows 默认端点检测切换并有限重连。
 - `app/win_native.py`、`hotkeys.py`、`startup.py`：Windows 集成和快捷键规则。
+- `app/selection_uia.py`：复制失败后的辅助功能取字；匿名管道传递真实选区，独立隐藏进程有超时和取消保护，不读剪贴板或保存正文。
 - `app/priority_hotkeys.py`：可选的线程内键盘接管；回调只匹配设定组合并投递操作，不执行复制、推理或文件操作。
 - `app/mp3_export.py`、`tempo.py`：MP3 编码、磁盘错误检查与语速处理。
 - `app/audio_gain.py`：播放与导出共用的音量/增益处理，超过 100% 时柔和限幅。

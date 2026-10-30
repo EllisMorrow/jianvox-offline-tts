@@ -54,6 +54,7 @@ class Preferences:
     priority_hotkeys: bool = False
     export_directory: str = ""
     chaptered_export: bool = False
+    close_to_tray: bool = True
 
     def validate(self):
         if self.voice not in {"serena", "vivian", "uncle_fu", "dylan", "eric", "ryan", "aiden", "ono_anna", "sohee"}:
@@ -73,6 +74,8 @@ class Preferences:
             raise ValueError("保存目录无效。")
         if not isinstance(self.chaptered_export, bool):
             raise ValueError("分章导出设置无效。")
+        if not isinstance(self.close_to_tray, bool):
+            raise ValueError("关闭窗口后进入托盘设置无效。")
         return self
 
     @classmethod

@@ -38,6 +38,22 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
         stdout.write(f"Window: {app.root.winfo_width()}x{app.root.winfo_height()}; editor: {app.text.winfo_width()}\n")
         assert app.text.winfo_width() > 300
         assert len(app.key_entries) == 3
+        app.ui.show_page("设置")
+        app.root.update()
+        assert app.close_to_tray_switch.winfo_ismapped(), "Close-to-tray setting is missing"
+        close_handler = app.root.protocol("WM_DELETE_WINDOW")
+        with patch.object(app, "persist"), patch.object(app, "hide") as hide, patch.object(app, "exit") as exit_app:
+            assert app.close_to_tray.get()
+            app.root.tk.call(close_handler)
+            hide.assert_called_once()
+            exit_app.assert_not_called()
+            app.close_to_tray_switch.toggle()
+            assert not app.preferences.close_to_tray
+            app.root.tk.call(close_handler)
+            exit_app.assert_called_once()
+            app.close_to_tray_switch.toggle()
+            assert app.preferences.close_to_tray
+        app.ui.show_page("朗读")
         with patch.object(app, "persist"):
             assert app.volume_slider.cget("to") == 1.5
             app.reader = SimpleNamespace(audio=AudioBuffer(queue.Queue()))
@@ -101,8 +117,10 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
             app.text.insert("1.0", source)
             app.reader = SimpleNamespace(ready=True, number=1, submit=Mock(return_value=1))
             app.read_button.invoke()
+            assert app.status.get().startswith("窗口文字"), "Editor read claimed a copy channel"
             app.events.put(("played", (1, 0)))
             app.poll()
+            assert app.status.get().startswith("窗口文字"), "Completion lost the text source"
             assert app.text.get("1.0", "end-1c") == source, "Reading cleared or changed editor text"
             app.native = Mock()
             app.hide()

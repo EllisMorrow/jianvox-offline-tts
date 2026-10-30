@@ -20,6 +20,7 @@ class WorkflowTests(unittest.TestCase):
         app.exporting = app.estimating = app.closed = False
         app.estimate_id = app.estimate_job = app.estimate_token = None
         app.events = queue.Queue()
+        app.metrics = {}
         app.calibrations = OrderedDict()
         app.root = Mock()
         app.status = Mock()
@@ -126,6 +127,84 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(reader.pending.started, 10.0)
         clear.assert_called_once_with(71)
         app.show.assert_not_called()
+
+    def test_direct_selection_submits_once_without_accessing_clipboard(self):
+        app = self.app()
+        reader = self.reader_without_worker(app)
+        app.events.put(("selection_copied", ("直接取得的选中文字。", 10.0, 1, None)))
+        # A late result for the same request must not replay after acceptance.
+        app.events.put(("selection_copied", ("迟到的旧结果。", 10.0, 1, 71)))
+        with patch("reader_app.clear_clipboard_if_unchanged") as clear:
+            app.poll()
+        self.assertEqual(reader.pending.parts, ["直接取得的选中文字。"])
+        self.assertEqual(reader.number, 2)
+        clear.assert_not_called()
+        app.show.assert_not_called()
+        app.show_error.assert_not_called()
+
+    def test_stopped_selection_drops_late_direct_result(self):
+        app = self.app()
+        reader = self.reader_without_worker(app)
+        reader.stop()
+        app.events.put(("selection_copied", ("迟到的选中文字。", 10.0, 1, None)))
+        with patch("reader_app.clear_clipboard_if_unchanged") as clear:
+            app.poll()
+        self.assertIsNone(reader.pending)
+        clear.assert_not_called()
+        app.show.assert_not_called()
+
+    def test_successful_source_stays_visible_through_reading_pause_and_completion(self):
+        for sequence, label in [(42, "剪贴板（主通道）"), (None, "直接取字（备用）")]:
+            with self.subTest(sequence=sequence):
+                app = self.app()
+                reader = self.reader_without_worker(app)
+                with patch("reader_app.clear_clipboard_if_unchanged"):
+                    app.accept_clipboard("公开的朗读测试文字。", sequence)
+                self.assertTrue(app.status_value.startswith(label))
+                for kind, payload, state in [
+                    ("first_audio", .5, "正在朗读"),
+                    ("paused", True, "已暂停"),
+                    ("paused", False, "正在继续"),
+                    ("played", 0, "朗读完成"),
+                ]:
+                    app.events.put((kind, (reader.number, payload)))
+                    app.poll()
+                    self.assertTrue(app.status_value.startswith(label), app.status_value)
+                    self.assertIn(state, app.status_value)
+                app.show.assert_not_called()
+
+    def test_new_editor_read_replaces_previous_fallback_label_and_ignores_late_events(self):
+        app = self.app()
+        reader = self.reader_without_worker(app)
+        app.accept_clipboard("先由备用通道取得的文字。", None)
+        previous = reader.number
+        app.read("现在朗读窗口文字。")
+        self.assertTrue(app.status_value.startswith("窗口文字"))
+        app.events.put(("first_audio", (previous, .1)))
+        app.events.put(("played", (previous, 0)))
+        app.poll()
+        self.assertTrue(app.status_value.startswith("窗口文字"))
+        self.assertNotIn("备用", app.status_value)
+
+    def test_failed_or_unaccepted_copy_never_claims_a_successful_channel(self):
+        app = self.app()
+        self.reader_without_worker(app)
+        del app.show_error
+        app.events.put(("copy_error", ("自动复制失败，直接取字也未成功。", app.reader.number)))
+        app.poll()
+        self.assertEqual(app.status_value, "自动复制失败，直接取字也未成功。")
+        with patch.object(app.reader, "submit", side_effect=ValueError("没有可朗读的文字。")):
+            app.accept_clipboard("", None)
+        self.assertEqual(app.status_value, "没有可朗读的文字。")
+        self.assertFalse(app.metrics)
+
+    def test_source_label_is_not_reused_for_another_request(self):
+        app = self.app()
+        reader = self.reader_without_worker(app)
+        app.accept_clipboard("本次备用取字。", None)
+        reader.stop()
+        app.set_read_status("准备新的任务。")
+        self.assertEqual(app.status_value, "准备新的任务。")
 
     def test_selection_and_clipboard_do_not_interrupt_export(self):
         app = self.app()

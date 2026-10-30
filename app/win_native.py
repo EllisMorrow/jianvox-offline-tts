@@ -7,6 +7,7 @@ import queue
 from hotkeys import DEFAULT_HOTKEYS, ACTION_NAMES, parse_hotkey, validate_bindings
 from priority_hotkeys import PriorityHotkeys
 from version import APP_NAME
+from selection_uia import get_selected_text, SelectionUnavailable, SelectionCancelled
 
 U = C.WinDLL("user32", use_last_error=True)
 K = C.WinDLL("kernel32", use_last_error=True)
@@ -107,21 +108,25 @@ class CopyCancelled(ValueError):
     pass
 
 
-def clipboard_text(clear_after=False, *, expected_sequence=None, active=None, with_sequence=False):
+class CopyUnavailable(ValueError):
+    """A copy/read failure may switch to UIA; cancellation and focus changes may not."""
+
+
+def clipboard_text(clear_after=False, *, expected_sequence=None, active=None, with_sequence=False, wait=True):
     deadline = time.monotonic() + .6
     while not U.OpenClipboard(None):
         if active is not None and not active():
             raise CopyCancelled()
-        if time.monotonic() >= deadline:
-            raise ValueError("剪贴板暂时被其他程序占用，请重试。")
+        if not wait or time.monotonic() >= deadline:
+            raise CopyUnavailable("剪贴板暂时被其他程序占用，请重试。")
         time.sleep(.015)
     try:
         if active is not None and not active():
             raise CopyCancelled()
         if expected_sequence is not None and U.GetClipboardSequenceNumber() != expected_sequence:
-            raise ValueError("剪贴板在读取前被其他程序更新，请重新选字。")
+            raise CopyUnavailable("剪贴板在读取前被其他程序更新，请重新选字。")
         if not U.IsClipboardFormatAvailable(13):
-            raise ValueError("剪贴板里没有文字。")
+            raise CopyUnavailable("剪贴板里没有文字。")
         handle = U.GetClipboardData(13)
         pointer = K.GlobalLock(handle) if handle else None
         if not pointer:
@@ -167,6 +172,7 @@ def copy_selection(hotkey="F4", *, active=None, defer_clear=False):
             raise CopyCancelled()
         if U.GetForegroundWindow() != target:
             raise ValueError("复制期间切换了窗口，请重新选中文字后朗读。")
+        return True
     def settle(seconds):
         until = time.monotonic() + seconds
         while time.monotonic() < until:
@@ -185,12 +191,17 @@ def copy_selection(hotkey="F4", *, active=None, defer_clear=False):
     for item, (vk, flags) in zip(inputs, [(0x11, 0), (0x43, 0), (0x43, 2), (0x11, 2)]):
         item.type = 1
         item.ki = KEYBDINPUT(vk, 0, flags, 0, 0)
-    for attempt in range(2):
+    try:
         guard()
+        # Probe availability without reading old contents or sending Ctrl+C
+        # into a known-busy clipboard. Do not compete for its lock with retries.
+        if not U.OpenClipboard(None):
+            raise CopyUnavailable("剪贴板暂时被其他程序占用。")
+        U.CloseClipboard()
         # Snapshot only immediately before Ctrl+C, not before the settling delay.
         before = U.GetClipboardSequenceNumber()
         if U.SendInput(4, inputs, C.sizeof(INPUT)) != 4:
-            raise ValueError("无法复制当前程序的文字。请手动复制后点击“朗读剪贴板”。")
+            raise CopyUnavailable("无法复制当前程序的文字。")
         deadline = time.monotonic() + 1.5
         changed = False
         while time.monotonic() < deadline:
@@ -199,16 +210,29 @@ def copy_selection(hotkey="F4", *, active=None, defer_clear=False):
             if sequence != before:
                 changed = True
                 if U.IsClipboardFormatAvailable(13):
-                    if defer_clear:
-                        return clipboard_text(expected_sequence=sequence, active=active, with_sequence=True)
-                    return clipboard_text(clear_after=True, expected_sequence=sequence, active=active)
+                    result = clipboard_text(clear_after=not defer_clear, expected_sequence=sequence,
+                                            active=active, with_sequence=defer_clear, wait=False)
+                    text = result[0] if defer_clear else result
+                    if not text.strip():
+                        raise CopyUnavailable("本次复制没有可朗读的文字。")
+                    guard()
+                    return result
             time.sleep(.015)
         if changed:
-            raise ValueError("本次复制没有可朗读的文字，请确认选中的是可复制文本。")
-        # One retry only if no new copy was observed and the source remains focused.
-        if not attempt:
-            settle(COPY_SETTLE_SECONDS)
-    raise ValueError("未复制到新文字。请先选中可复制的文字再按朗读快捷键；也可手动复制后使用“朗读剪贴板”。")
+            raise CopyUnavailable("本次复制没有可朗读的文字。")
+        raise CopyUnavailable("未复制到新文字。")
+    except (CopyUnavailable, OSError):
+        guard()
+        try:
+            text = get_selected_text(target, active=guard)
+        except SelectionCancelled:
+            raise CopyCancelled() from None
+        except SelectionUnavailable as exc:
+            guard()
+            raise ValueError(f"自动复制失败，直接取字也未成功：{exc}") from None
+        guard()
+        # UIA never owns a clipboard snapshot; callers must not clear it.
+        return (text, None) if defer_clear else text
 
 
 class Native:

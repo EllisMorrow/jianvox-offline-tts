@@ -24,11 +24,11 @@ class PreferenceTests(unittest.TestCase):
     def test_settings_roundtrip_excludes_text(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"
-            prefs = Preferences(theme="dark", speed=1.25, volume=.4, priority_hotkeys=True,
+            prefs = Preferences(theme="dark", speed=1.25, volume=.4, priority_hotkeys=True, close_to_tray=False,
                                 hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
             prefs.save(path)
             self.assertEqual(Preferences.load(path), prefs)
-            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory", "chaptered_export"})
+            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory", "chaptered_export", "close_to_tray"})
 
     def test_legacy_settings_default_to_system_theme(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -37,6 +37,7 @@ class PreferenceTests(unittest.TestCase):
             self.assertEqual(Preferences.load(path).theme, "system")
             self.assertFalse(Preferences.load(path).priority_hotkeys)
             self.assertFalse(Preferences.load(path).chaptered_export)
+            self.assertTrue(Preferences.load(path).close_to_tray)
             self.assertEqual(path.read_text("utf-8"), '{"voice":"serena","speed":1.1}')
 
     def test_blank_hotkeys_are_independently_disabled(self):
@@ -64,6 +65,8 @@ class PreferenceTests(unittest.TestCase):
                 Preferences(priority_hotkeys=value).validate()
             with self.assertRaises(ValueError):
                 Preferences(chaptered_export=value).validate()
+            with self.assertRaises(ValueError):
+                Preferences(close_to_tray=value).validate()
 
     def test_boosted_volume_roundtrip_keeps_other_preferences(self):
         with tempfile.TemporaryDirectory() as tmp:

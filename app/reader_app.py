@@ -29,6 +29,7 @@ THEME_CHOICES = {"白天": "light", "夜晚": "dark", "跟随系统": "system"}
 THEME_LABELS = {value: label for label, value in THEME_CHOICES.items()}
 ERROR_COLOR = ("#B24B55", "#F397A1")
 SUCCESS_COLOR = ("#329678", "#69CBA9")
+READ_SOURCE_LABELS = {"clipboard": "剪贴板（主通道）", "uia": "直接取字（备用）", "editor": "窗口文字"}
 
 
 class App:
@@ -52,7 +53,7 @@ class App:
             self.root.withdraw()
         self.root.iconbitmap(str(PROJECT / "assets" / "app.ico"))
         self.root.title(f"{APP_NAME} v{VERSION}" + (" · 界面演示" if demo else ""))
-        self.root.protocol("WM_DELETE_WINDOW", self.exit if demo else self.hide)
+        self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
         self.closed, self.tray_ok = False, True
         self.copy_lock = threading.Lock()
         self.hotkeys, self.metrics = {}, {}
@@ -74,6 +75,7 @@ class App:
             except OSError:
                 self.events.put(("error", "开机启动路径未能更新，请重新切换自启开关。"))
         self.export_directory = tk.StringVar(value=self.preferences.export_directory)
+        self.close_to_tray = tk.BooleanVar(value=self.preferences.close_to_tray)
         self.theme = tk.StringVar(value=THEME_LABELS[self.preferences.theme])
         self.priority_hotkeys = tk.BooleanVar(value=self.preferences.priority_hotkeys)
         self.export_mode = tk.StringVar(value="分章 MP3" if self.preferences.chaptered_export else "单个 MP3")
@@ -139,6 +141,16 @@ class App:
         except (OSError, ValueError) as exc:
             self.startup_enabled.set(startup.is_enabled())
             self.show_error(f"开机启动设置失败：{exc}")
+
+    def change_close_to_tray(self):
+        self.preferences.close_to_tray = self.close_to_tray.get()
+        self.persist()
+
+    def on_window_close(self):
+        if not self.demo and self.preferences.close_to_tray:
+            self.hide()
+        else:
+            self.exit()
 
     def export_mp3(self):
         if self.exporting or self.estimating:
@@ -348,7 +360,16 @@ class App:
         else:
             self.key_status.configure(text="预览模式不注册全局快捷键。")
 
-    def read(self, text, started=None):
+    def set_read_status(self, message):
+        # Source belongs to the accepted request, never to an attempted fallback
+        # or to the preceding read/export. It is session-only, like metrics.
+        source = None
+        if self.reader and self.metrics.get("request") == self.reader.number:
+            source = self.metrics.get("source")
+        label = READ_SOURCE_LABELS.get(source)
+        self.status.set(f"{label} · {message}" if label else message)
+
+    def read(self, text, started=None, *, source="editor"):
         if not self.reader:
             return
         if self.estimating:
@@ -358,16 +379,17 @@ class App:
             self.save_playback()
             number = self.reader.submit(text, self.preferences.voice, self.preferences.style,
                                         started, self.preferences.speed)
-            self.metrics = {"request": number, "characters": len(text.strip()), "speed": self.preferences.speed}
+            self.metrics = {"request": number, "characters": len(text.strip()), "speed": self.preferences.speed,
+                            "source": source}
             self.pause_button.configure(text="暂停")
-            self.status.set("正在生成声音…")
+            self.set_read_status("正在生成声音…")
             return number
         except ValueError as exc:
             self.show_error(str(exc))
 
     def accept_clipboard(self, text, sequence, started=None):
-        number = self.read(text, started)
-        if number is not None:
+        number = self.read(text, started, source="uia" if sequence is None else "clipboard")
+        if number is not None and sequence is not None:
             try:
                 clear_clipboard_if_unchanged(sequence)
             except (ValueError, OSError):
@@ -497,7 +519,7 @@ class App:
                     self.report_issue(RuntimeIssue("audio_unavailable", data))
                 elif kind == "audio_reconnected":
                     if self.reader and self.reader.ready and not self.exporting and not self.estimating:
-                        self.status.set("播放设备已连接，可继续朗读。")
+                        self.set_read_status("播放设备已连接，可继续朗读。")
                         self.dot.configure(text_color=SUCCESS_COLOR)
                 elif kind == "issue":
                     self.report_issue(data)
@@ -544,15 +566,15 @@ class App:
                                     "正在停止时间预估…" if self.estimating else "已停止，可以开始新的朗读。")
                     self.pause_button.configure(text="暂停")
                 elif kind == "paused" and data[0] == self.reader.number:
-                    self.status.set("已暂停，再按暂停键或点击继续即可接着朗读。" if data[1] else "正在继续朗读…")
+                    self.set_read_status("已暂停，再按暂停键或点击继续即可接着朗读。" if data[1] else "正在继续朗读…")
                     self.pause_button.configure(text="继续" if data[1] else "暂停")
                 elif kind == "first_audio" and data[0] == self.reader.number:
                     self.metrics["first_output_seconds"] = round(data[1], 3)
-                    self.status.set(f"正在朗读 · {self.metrics.get('characters', '')} 字 · 约 {data[1]:.2f} 秒开始输出")
+                    self.set_read_status(f"正在朗读 · {self.metrics.get('characters', '')} 字 · 约 {data[1]:.2f} 秒开始输出")
                     self.dot.configure(text_color=ACCENT)
                 elif kind == "played" and data[0] == self.reader.number:
                     self.metrics["buffer_gaps"] = data[1]
-                    self.status.set("朗读完成，随时可以继续。")
+                    self.set_read_status("朗读完成，随时可以继续。")
                     self.dot.configure(text_color=SUCCESS_COLOR)
                     self.pause_button.configure(text="暂停")
                 elif kind == "export_progress" and data[0] == self.export_id:

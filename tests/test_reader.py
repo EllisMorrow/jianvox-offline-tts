@@ -191,22 +191,31 @@ class ReaderTests(unittest.TestCase):
 
     def test_copy_timeout_does_not_read_old_clipboard(self):
         with patch.object(win_native.U, "GetForegroundWindow", return_value=101), \
+             patch.object(win_native.U, "OpenClipboard", return_value=True), \
+             patch.object(win_native.U, "CloseClipboard"), \
              patch.object(win_native.U, "GetClipboardSequenceNumber", return_value=20), \
              patch.object(win_native.U, "GetAsyncKeyState", return_value=0), \
-             patch.object(win_native.U, "SendInput", return_value=4), \
+             patch.object(win_native.U, "SendInput", return_value=4) as send, \
+             patch.object(win_native, "get_selected_text", side_effect=win_native.SelectionUnavailable()) as direct, \
              patch.object(win_native, "clipboard_text") as read:
-            with self.assertRaisesRegex(ValueError, "未复制到新文字"):
+            with self.assertRaisesRegex(ValueError, "直接取字也未成功"):
                 win_native.copy_selection()
             read.assert_not_called()
+            send.assert_called_once()
+            direct.assert_called_once()
 
     def test_copy_success_reads_updated_clipboard(self):
         with patch.object(win_native.U, "GetForegroundWindow", return_value=101), \
+             patch.object(win_native.U, "OpenClipboard", return_value=True), \
+             patch.object(win_native.U, "CloseClipboard"), \
              patch.object(win_native.U, "IsClipboardFormatAvailable", return_value=True), \
              patch.object(win_native.U, "GetClipboardSequenceNumber", side_effect=[20, 21]), \
              patch.object(win_native.U, "GetAsyncKeyState", return_value=0), \
              patch.object(win_native.U, "SendInput", return_value=4), \
-             patch.object(win_native, "clipboard_text", return_value="新文字"):
+             patch.object(win_native, "clipboard_text", return_value="新文字"), \
+             patch.object(win_native, "get_selected_text") as direct:
             self.assertEqual(win_native.copy_selection(), "新文字")
+            direct.assert_not_called()
 
     def test_windows_input_layout(self):
         self.assertEqual(win_native.C.sizeof(win_native.INPUT), 40)
