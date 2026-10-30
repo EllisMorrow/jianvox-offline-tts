@@ -6,19 +6,20 @@ from hotkeys import ACTION_NAMES
 from reader_core import VOICES
 from version import VERSION
 from ui_tooltip import Tooltip
+from ui_artwork import icon, listening_paper
 
-BG, PANEL = ("#F7F8FB", "#171923"), ("#FFFFFF", "#222531")
-INK, MUTED = ("#202338", "#ECECF4"), ("#646B80", "#AFB5C8")
-ACCENT, HOVER = ("#6256D9", "#A69BFF"), ("#5145C6", "#B9B0FF")
-BORDER = ("#E5E7EF", "#383D50")
-SIDEBAR, SELECTED = ("#EFF1F7", "#1D202C"), ("#E4E1F7", "#373150")
-FIELD, CONTROL = ("#FAFBFD", "#1B1E29"), ("#F1F2F7", "#2E3343")
-CONTROL_BUTTON, CONTROL_HOVER = ("#E8EAF3", "#3A4053"), ("#DDE0EB", "#484F65")
-QUIET_HOVER, SECONDARY_HOVER = ("#E9EBF3", "#303547"), ("#F1F2F8", "#303547")
-DISABLED, TRACK = ("#949AAD", "#7D859B"), ("#DADDE8", "#41475B")
-SCROLLBAR, SCROLLBAR_HOVER = ("#CFD3DF", "#4C5369"), ("#B9BFCE", "#626C87")
-PRIMARY_FILL, PRIMARY_HOVER = ("#6256D9", "#7160D2"), ("#5145C6", "#7865D6")
-SUCCESS = ("#26775E", "#7FD5B1")
+BG, PANEL = ("#F9F7FD", "#1C1928"), ("#FFFFFF", "#272232")
+INK, MUTED = ("#332B49", "#F2EDF9"), ("#766A88", "#BEB2D0")
+ACCENT, HOVER = ("#7754C3", "#C0A9FF"), ("#6543B1", "#D5C1FF")
+BORDER = ("#DDD2EF", "#4A3D61")
+SIDEBAR, SELECTED = ("#F0EAF9", "#241F33"), ("#E5D9F7", "#403153")
+FIELD, CONTROL = ("#FBF9FE", "#211D2D"), ("#F1EBFA", "#352C46")
+CONTROL_BUTTON, CONTROL_HOVER = ("#E6DDF5", "#49395F"), ("#DACBED", "#5B4775")
+QUIET_HOVER, SECONDARY_HOVER = ("#E8DDF6", "#3C304E"), ("#F3ECFC", "#3B304B")
+DISABLED, TRACK = ("#9A8FAA", "#9386A7"), ("#DDD3EC", "#4A3D60")
+SCROLLBAR, SCROLLBAR_HOVER = ("#DACFEA", "#514262"), ("#C3AEDF", "#6C5782")
+PRIMARY_FILL, PRIMARY_HOVER = ("#7754C3", "#805EBB"), ("#6543B1", "#926DCB")
+SUCCESS = ("#327762", "#8BD0B4")
 
 
 def window_dimensions(root):
@@ -53,6 +54,7 @@ class ReaderUI:
         self.sidebar_collapsed = False
         self._header_mode = None
         self._toolbar_mode = None
+        self._empty_visible = False
 
     def font(self, size=13, bold=False):
         key = (size, bold)
@@ -70,12 +72,12 @@ class ReaderUI:
                   "quiet": ("transparent", QUIET_HOVER, MUTED, 0)}
         fill, hover, ink, border = colors[role]
         return ctk.CTkButton(parent, text=text, command=command, height=kwargs.pop("height", 38),
-                            corner_radius=7, font=self.font(), fg_color=fill, hover_color=hover,
+                            corner_radius=kwargs.pop("corner_radius", 12), font=self.font(), fg_color=fill, hover_color=hover,
                             text_color=ink, text_color_disabled=DISABLED,
                             border_width=border, border_color=BORDER, **kwargs)
 
     def card(self, parent, **kwargs):
-        return ctk.CTkFrame(parent, fg_color=PANEL, corner_radius=10, border_width=1, border_color=BORDER, **kwargs)
+        return ctk.CTkFrame(parent, fg_color=PANEL, corner_radius=18, border_width=1, border_color=BORDER, **kwargs)
 
     def build(self):
         app, root = self.app, self.app.root
@@ -91,21 +93,26 @@ class ReaderUI:
         self.sidebar.grid_columnconfigure(0, weight=1)
         self.sidebar.grid_rowconfigure(4, weight=1)
         self.brand = ctk.CTkFrame(self.sidebar, fg_color="transparent")
-        self.brand.grid(row=0, column=0, padx=16, pady=(18, 12), sticky="ew")
+        self.brand.grid(row=0, column=0, padx=16, pady=(22, 18), sticky="ew")
+        self.brand_mark = ctk.CTkLabel(self.brand, text="", image=icon("headphones", ACCENT, 25),
+                                      width=42, height=42, fg_color=SELECTED, corner_radius=14)
+        self.brand_mark.pack(anchor="w", pady=(0, 10))
         self.brand_title = self.label(self.brand, "聆笺", 21, True)
         self.brand_title.pack(anchor="w")
         self.brand_name = self.label(self.brand, "JianVox", 12, color=MUTED)
         self.brand_name.pack(anchor="w", pady=(2, 0))
-        for row, name in enumerate(["朗读", "快捷键", "设置"], 1):
-            button = self.button(self.sidebar, name, lambda n=name: self.show_page(n), role="quiet", anchor="w", width=108, height=38)
-            button.grid(row=row, column=0, sticky="ew", padx=10, pady=2)
+        for row, (name, symbol) in enumerate([("朗读", "read"), ("快捷键", "keys"), ("设置", "settings")], 1):
+            button = self.button(self.sidebar, name, lambda n=name: self.show_page(n), role="quiet", anchor="w",
+                                 image=icon(symbol, MUTED), width=108, height=40)
+            button.grid(row=row, column=0, sticky="ew", padx=10, pady=4)
             self.nav[name] = button
         # Keep the handle outside the navigation so hiding the entire sidebar
         # returns its full width to the editor and cannot overlap a menu item.
         self.sidebar_handle = ctk.CTkFrame(root, width=20, fg_color=BG, corner_radius=0)
         self.sidebar_handle.grid(row=0, column=1, sticky="nsew")
         self.sidebar_handle.grid_propagate(False)
-        self.sidebar_toggle = self.button(self.sidebar_handle, "‹", self.toggle_sidebar, role="quiet", width=20, height=48)
+        self.sidebar_toggle = self.button(self.sidebar_handle, "‹", self.toggle_sidebar, role="quiet",
+                                           width=20, height=48, corner_radius=8)
         self.sidebar_toggle.place(relx=.5, rely=.5, anchor="center")
         self.sidebar_tooltip = Tooltip(self.sidebar_toggle, "收起或展开左侧导航。")
         app.hide_button = self.button(self.sidebar, "隐藏到托盘", app.hide, role="quiet", width=108, height=34)
@@ -121,7 +128,9 @@ class ReaderUI:
         self.header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         self.header.grid_columnconfigure(0, weight=1)
         self.title = self.label(self.header, "朗读", 22, True)
-        self.title.grid(row=0, column=0, sticky="nw")
+        self.title.grid(row=0, column=0, sticky="nw", pady=(2, 0))
+        self.subtitle = self.label(self.header, "让文字，自然地成为声音。", 11, color=MUTED)
+        self.subtitle.grid(row=1, column=0, sticky="w", pady=(2, 0))
         self.hint_label = self.label(self.header, textvariable=app.hint, size=11, color=MUTED)
         self.hint_label.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(5, 0))
         self.build_voice_controls(self.header)
@@ -171,24 +180,39 @@ class ReaderUI:
         self.hint_label.configure(wraplength=max(100, width))
         if self.current_page != "朗读":
             self.voice_controls.grid_remove()
+            self.subtitle.grid()
             self._header_mode = None
             return
-        mode = "wide" if width >= 640 else "stacked"
+        mode = "wide" if width >= 690 else "stacked"
         if mode == self._header_mode:
             return
         self._header_mode = mode
+        if mode == "wide":
+            self.subtitle.grid()
+        else:
+            self.subtitle.grid_remove()
+        for group in self.voice_controls.winfo_children():
+            group.grid_configure(pady=9 if mode == "wide" else 5)
         self.voice_controls.grid(row=0 if mode == "wide" else 1, column=1 if mode == "wide" else 0,
+                                 rowspan=2 if mode == "wide" else 1,
                                  columnspan=1 if mode == "wide" else 2, sticky="e" if mode == "wide" else "ew",
                                  padx=(12, 0) if mode == "wide" else 0, pady=0 if mode == "wide" else (6, 0))
+        self.hint_label.grid(row=2)
 
     def show_page(self, name):
         for label, page in self.pages.items():
             page.grid_forget()
             self.nav[label].configure(fg_color=SELECTED if label == name else "transparent",
-                                      text_color=ACCENT if label == name else MUTED)
+                                      text_color=ACCENT if label == name else MUTED,
+                                      image=icon({"朗读": "read", "快捷键": "keys", "设置": "settings"}[label],
+                                                 ACCENT if label == name else MUTED))
         self.pages[name].grid(row=0, column=0, sticky="nsew")
         self.current_page = name
         self.title.configure(text={"朗读":"文字朗读", "快捷键":"键盘快捷键", "设置":"偏好设置"}[name])
+        self.subtitle.configure(text={"朗读": "让文字，自然地成为声音。", "快捷键": "一个按键，随时开始倾听。",
+                                      "设置": "把聆笺调成你喜欢的样子。"}[name])
+        if name != "朗读":
+            self.hint_label.grid(row=2)
         self.layout_header()
 
     def show_export_progress(self):
@@ -207,22 +231,34 @@ class ReaderUI:
         editor.grid_columnconfigure(0, weight=1)
         editor.grid_rowconfigure(1, weight=1)
         tools = ctk.CTkFrame(editor, fg_color="transparent")
-        tools.grid(row=0, column=0, sticky="ew", padx=16, pady=(8, 4))
-        self.label(tools, "朗读文字", bold=True).pack(side="left")
+        tools.grid(row=0, column=0, sticky="ew", padx=18, pady=(10, 4))
+        self.label(tools, "朗读文字", 14, bold=True).pack(side="left")
         app.clear_button = self.button(tools, "清空", app.clear_text, role="quiet", width=50, height=28)
         app.clear_button.pack(side="right")
-        app.counter = self.label(tools, "0 字", 11, color=MUTED)
-        app.counter.pack(side="right", padx=(8, 4))
+        app.counter = self.label(tools, "0 字", 11, color=MUTED, fg_color=CONTROL, corner_radius=9, width=60, height=26)
+        app.counter.pack(side="right", padx=(8, 6))
         app.text = ctk.CTkTextbox(editor, fg_color=PANEL, text_color=INK, corner_radius=0, border_width=0,
                                  wrap="word", undo=True, font=self.font(16), spacing1=3, spacing3=5,
                                  scrollbar_button_color=SCROLLBAR, scrollbar_button_hover_color=SCROLLBAR_HOVER)
-        app.text.grid(row=1, column=0, sticky="nsew", padx=12, pady=(0, 8))
+        app.text.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 8))
         self.label(editor, "在此粘贴文字，或使用选字朗读快捷键。", 11, color=MUTED).grid(row=2, column=0, sticky="w", padx=16, pady=(0, 6))
         def changed(_):
             if app.text.edit_modified():
                 app.update_counter()
                 app.text.edit_modified(False)
+            self.refresh_empty_state()
         app.text.bind("<<Modified>>", changed)
+        self.empty_state = ctk.CTkFrame(app.text, fg_color=PANEL, corner_radius=0)
+        self.empty_art = ctk.CTkLabel(self.empty_state, text="", image=listening_paper(), height=148)
+        self.empty_art.pack()
+        self.empty_title = self.label(self.empty_state, "从一段文字开始", 17, True)
+        self.empty_title.pack(pady=(6, 4))
+        self.empty_hint = self.label(self.empty_state, "粘贴文章，或选中文字后按朗读快捷键。", 11, color=MUTED)
+        self.empty_hint.pack()
+        for widget in (self.empty_state, self.empty_art, self.empty_title, self.empty_hint):
+            widget.bind("<Button-1>", self.focus_editor, add="+")
+        for event in ("<FocusIn>", "<FocusOut>", "<Configure>"):
+            app.text.bind(event, self.refresh_empty_state, add="+")
         app.update_counter()
 
         app.action_bar = ctk.CTkFrame(parent, fg_color="transparent")
@@ -230,22 +266,25 @@ class ReaderUI:
         app.action_bar.grid_columnconfigure(0, weight=1)
         self.playback_actions = ctk.CTkFrame(app.action_bar, fg_color="transparent")
         self.export_actions = ctk.CTkFrame(app.action_bar, fg_color="transparent")
-        app.read_button = self.button(self.playback_actions, "朗读文字", lambda: app.read(app.text.get("1.0", "end")), "primary", width=106)
+        app.read_button = self.button(self.playback_actions, "朗读文字", lambda: app.read(app.text.get("1.0", "end")), "primary",
+                                      image=icon("play", ("#FFFFFF", "#FFFFFF"), 15), width=116)
         app.read_button.pack(side="left", padx=(0, 8))
         app.pause_button = self.button(self.playback_actions, "暂停", app.pause, width=56)
         app.pause_button.pack(side="left", padx=(0, 8))
         app.stop_button = self.button(self.playback_actions, "停止", app.stop, width=56)
         app.stop_button.pack(side="left", padx=(0, 8))
-        app.clipboard_button = self.button(self.playback_actions, "朗读剪贴板", app.read_clipboard, width=106)
+        app.clipboard_button = self.button(self.playback_actions, "朗读剪贴板", app.read_clipboard,
+                                           image=icon("clipboard", MUTED, 16), width=126)
         app.clipboard_button.pack(side="left")
         app.export_mode_menu = ctk.CTkOptionMenu(self.export_actions, variable=app.export_mode,
-            values=["单个 MP3", "分章 MP3"], command=app.change_export_mode, width=104, height=36,
+            values=["单个 MP3", "分章 MP3"], command=app.change_export_mode, width=104, height=36, corner_radius=10,
             fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER,
             text_color=INK, text_color_disabled=DISABLED, dropdown_fg_color=PANEL,
             dropdown_text_color=INK, dropdown_hover_color=SELECTED,
             font=self.font(11), dropdown_font=self.font(12))
         app.export_mode_menu.pack(side="left", padx=(0, 8))
-        app.export_button = self.button(self.export_actions, "导出 MP3", app.export_mp3, width=100)
+        app.export_button = self.button(self.export_actions, "导出 MP3", app.export_mp3,
+                                        image=icon("export", ACCENT, 16), width=114)
         app.export_button.pack(side="left", padx=(0, 8))
         app.estimate_button = self.button(self.export_actions, "导出MP3时间预估", app.estimate_export_time, width=150)
         app.estimate_button.pack(side="left")
@@ -254,9 +293,30 @@ class ReaderUI:
         app.action_bar.bind("<Configure>", self.layout_toolbar)
         self.layout_toolbar()
 
+    def focus_editor(self, _event=None):
+        self.empty_state.place_forget()
+        self._empty_visible = False
+        self.app.text.focus_set()
+
+    def refresh_empty_state(self, _event=None):
+        # The vignette takes no layout space and never intercepts editing.
+        # Omit it in short windows rather than shrinking the writing area.
+        text = self.app.text
+        show = (text._textbox.compare("end-1c", "==", "1.0")
+                and text.focus_get() is not text._textbox
+                and text._reverse_widget_scaling(text.winfo_height()) >= 235
+                and text._reverse_widget_scaling(text.winfo_width()) >= 340)
+        if show == self._empty_visible:
+            return
+        self._empty_visible = show
+        if show:
+            self.empty_state.place(relx=.5, rely=.46, anchor="center")
+        else:
+            self.empty_state.place_forget()
+
     def layout_toolbar(self, _event=None):
         width = self.app.action_bar._reverse_widget_scaling(self.app.action_bar.winfo_width())
-        mode = "wide" if width >= 800 else "stacked"
+        mode = "wide" if width >= 830 else "stacked"
         if mode == self._toolbar_mode:
             return
         self._toolbar_mode = mode
@@ -267,12 +327,13 @@ class ReaderUI:
 
     def build_voice_controls(self, parent):
         app = self.app
-        self.voice_controls = ctk.CTkFrame(parent, fg_color="transparent")
+        self.voice_controls = ctk.CTkFrame(parent, fg_color=CONTROL, corner_radius=15,
+                                           border_width=1, border_color=BORDER)
         self.voice_controls.grid_columnconfigure(0, weight=1)
         voice = ctk.CTkFrame(self.voice_controls, fg_color="transparent")
-        voice.grid(row=0, column=0, sticky="ew", padx=(0, 16))
+        voice.grid(row=0, column=0, sticky="ew", padx=(12, 14), pady=9)
         self.label(voice, "声音", 11, color=MUTED, height=17).pack(anchor="w", pady=(0, 3))
-        app.voice_menu = ctk.CTkOptionMenu(voice, variable=app.voice, values=list(VOICES), width=184, height=30,
+        app.voice_menu = ctk.CTkOptionMenu(voice, variable=app.voice, values=list(VOICES), width=184, height=30, corner_radius=10,
             fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER, text_color=INK,
             text_color_disabled=DISABLED, dropdown_fg_color=PANEL, dropdown_text_color=INK, dropdown_hover_color=SELECTED,
             font=self.font(11), dropdown_font=self.font(12), command=lambda _: app.defer_save())
@@ -281,7 +342,7 @@ class ReaderUI:
             ("语速", app.speed, app.speed_text, .75, 1.5, 15, "speed_slider"),
             ("音量", app.volume, app.volume_text, 0, 1.5, 150, "volume_slider")], 1):
             group = ctk.CTkFrame(self.voice_controls, fg_color="transparent", width=140 if column == 1 else 124)
-            group.grid(row=0, column=column, sticky="ew", padx=(0, 16) if column == 1 else 0)
+            group.grid(row=0, column=column, sticky="ew", padx=(0, 14) if column == 1 else (0, 12), pady=9)
             row = ctk.CTkFrame(group, fg_color="transparent")
             row.pack(fill="x", pady=(0, 6))
             self.label(row, title, 11, color=MUTED).pack(side="left")
@@ -309,7 +370,7 @@ class ReaderUI:
         app.key_entries = {}
         for row, (action, title) in enumerate(ACTION_NAMES.items(), 2):
             self.label(card, title, width=115).grid(row=row, column=0, sticky="w", padx=(20, 14), pady=5)
-            entry = ctk.CTkEntry(card, height=36, font=self.font(), fg_color=FIELD, border_color=BORDER,
+            entry = ctk.CTkEntry(card, height=36, font=self.font(), fg_color=FIELD, border_color=BORDER, corner_radius=10,
                                  text_color=INK, placeholder_text_color=DISABLED)
             entry.insert(0, app.preferences.hotkeys[action])
             entry.grid(row=row, column=1, sticky="ew", pady=5)
@@ -347,7 +408,7 @@ class ReaderUI:
         self.label(appearance, "跟随系统会自动匹配 Windows 外观。", 11, color=MUTED).grid(
             row=1, column=0, sticky="w", padx=18, pady=(0, 15))
         app.theme_menu = ctk.CTkOptionMenu(appearance, variable=app.theme,
-            values=["白天", "夜晚", "跟随系统"], command=app.change_theme, width=132, height=32,
+            values=["白天", "夜晚", "跟随系统"], command=app.change_theme, width=132, height=32, corner_radius=10,
             fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER,
             text_color=INK, text_color_disabled=DISABLED, dropdown_fg_color=PANEL,
             dropdown_text_color=INK, dropdown_hover_color=SELECTED,
@@ -358,7 +419,7 @@ class ReaderUI:
         self.label(style, "朗读语气", 14, True).pack(anchor="w", padx=18, pady=(16, 5))
         self.label(style, "描述节奏与情绪，保存后在下次朗读生效。", 11, color=MUTED).pack(anchor="w", padx=18, pady=(0, 10))
         app.style_box = ctk.CTkTextbox(style, height=78, fg_color=FIELD, text_color=INK, border_width=1,
-                                      border_color=BORDER, font=self.font(), wrap="word", corner_radius=7,
+                                      border_color=BORDER, font=self.font(), wrap="word", corner_radius=12,
                                       scrollbar_button_color=SCROLLBAR, scrollbar_button_hover_color=SCROLLBAR_HOVER)
         app.style_box.pack(fill="x", padx=18)
         app.style_box.insert("1.0", app.preferences.style)
@@ -370,7 +431,7 @@ class ReaderUI:
         row = ctk.CTkFrame(general, fg_color="transparent")
         row.pack(fill="x", padx=18, pady=(0, 16))
         ctk.CTkEntry(row, textvariable=app.export_directory, state="readonly", height=36, font=self.font(12),
-                     fg_color=FIELD, border_color=BORDER, text_color=INK,
+                     fg_color=FIELD, border_color=BORDER, text_color=INK, corner_radius=10,
                      placeholder_text_color=DISABLED).pack(side="left", fill="x", expand=True)
         self.button(row, "选择目录", app.choose_directory, width=100, height=36).pack(side="right", padx=(10, 0))
         ctk.CTkSwitch(general, text="开机启动后进入托盘", variable=app.startup_enabled,

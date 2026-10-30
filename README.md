@@ -64,9 +64,18 @@
 
 ## 界面预览
 
-以下为 **v0.6.0** 夜晚主题的真实窗口截图，供了解布局；不代表 v0.7.3 全部控件。设置中可切换白天、夜晚或跟随系统主题。
+以下为新版插画风界面的白天 / 夜晚预览截图（预览模式未加载语音模型）。在“设置”中可切换白天、夜晚或跟随系统主题。
 
-![聆笺 JianVox v0.6.0 夜晚主题：声音选择、语速、MP3 导出与时间预估](docs/screenshots/reader.png)
+**白天主题**
+
+![聆笺 JianVox 白天主题：纸张耳机插画、声音与语速、朗读及 MP3 导出](docs/screenshots/reader.png)
+
+<details>
+<summary>查看夜晚主题</summary>
+
+![聆笺 JianVox 夜晚主题：淡紫线稿与深色阅读界面](docs/screenshots/reader-dark.png)
+
+</details>
 
 ## 更多说明
 

@@ -37,6 +37,20 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
         app.root.update()
         stdout.write(f"Window: {app.root.winfo_width()}x{app.root.winfo_height()}; editor: {app.text.winfo_width()}\n")
         assert app.text.winfo_width() > 300
+        app.root.focus_force()
+        app.root.update()
+        assert app.ui.empty_state.winfo_ismapped(), "Empty-editor illustration is missing"
+        app.ui.empty_title._label.event_generate("<Button-1>")
+        app.root.update()
+        assert app.root.focus_get() is app.text._textbox, "Illustration click did not focus the editor"
+        assert not app.ui.empty_state.winfo_ismapped(), "Illustration obscures the focused editor"
+        app.text.insert("1.0", "插画不应覆盖正在编辑的内容。")
+        app.root.focus_force()
+        app.root.update()
+        assert not app.ui.empty_state.winfo_ismapped(), "Illustration covers editor text"
+        app.clear_text()
+        app.root.update()
+        assert app.ui.empty_state.winfo_ismapped(), "Empty-editor illustration did not return after clearing"
         assert len(app.key_entries) == 3
         app.ui.show_page("设置")
         app.root.update()
