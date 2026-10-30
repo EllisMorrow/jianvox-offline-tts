@@ -1,6 +1,7 @@
 # 聆笺 JianVox · 离线朗读与 MP3 导出
 
 [![Release](https://img.shields.io/github/v/release/EllisMorrow/jianvox-offline-tts)](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/EllisMorrow/jianvox-offline-tts/total)](https://github.com/EllisMorrow/jianvox-offline-tts/releases)
 [![Windows checks](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml/badge.svg)](https://github.com/EllisMorrow/jianvox-offline-tts/actions/workflows/checks.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
