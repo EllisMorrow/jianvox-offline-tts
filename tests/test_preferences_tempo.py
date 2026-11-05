@@ -24,17 +24,18 @@ class PreferenceTests(unittest.TestCase):
     def test_settings_roundtrip_excludes_text(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"
-            prefs = Preferences(theme="dark", speed=1.25, volume=.4, priority_hotkeys=True, close_to_tray=False,
+            prefs = Preferences(theme="dark", color_theme="ocean", speed=1.25, volume=.4, priority_hotkeys=True, close_to_tray=False,
                                 hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
             prefs.save(path)
             self.assertEqual(Preferences.load(path), prefs)
-            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory", "chaptered_export", "close_to_tray"})
+            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "color_theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory", "chaptered_export", "close_to_tray"})
 
     def test_legacy_settings_default_to_system_theme(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "settings.json"
             path.write_text('{"voice":"serena","speed":1.1}', "utf-8")
             self.assertEqual(Preferences.load(path).theme, "system")
+            self.assertEqual(Preferences.load(path).color_theme, "lavender")
             self.assertFalse(Preferences.load(path).priority_hotkeys)
             self.assertFalse(Preferences.load(path).chaptered_export)
             self.assertTrue(Preferences.load(path).close_to_tray)

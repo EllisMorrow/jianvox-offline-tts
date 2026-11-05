@@ -4,18 +4,20 @@ import unittest
 import customtkinter as ctk
 from reader_app import App
 from settings import Preferences
+from ui_themes import get_palette
 
 
 class ThemeTests(unittest.TestCase):
     def test_saved_appearance_mode_is_applied_before_root_creation(self):
         order = []
         root = Mock()
-        preferences = Preferences(theme="system")
+        preferences = Preferences(theme="system", color_theme="ocean")
 
         def set_mode(mode):
             order.append(("mode", mode))
 
         def create_root(*args, **kwargs):
+            self.assertEqual(kwargs["fg_color"], get_palette("ocean")["BG"])
             order.append(("root", None))
             return root
 

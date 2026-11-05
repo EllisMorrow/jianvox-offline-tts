@@ -19,7 +19,8 @@ import startup
 from hotkeys import ACTION_NAMES, DEFAULT_HOTKEYS, validate_bindings
 from reader_core import Reader, VOICES, split_text
 from export_estimate import analyze_text, select_sample, Calibration, estimate_export
-from reader_ui import ReaderUI, BG, ACCENT
+from reader_ui import ReaderUI
+from ui_themes import get_palette, PALETTE_LABELS, PALETTE_CHOICES
 from runtime_errors import RuntimeIssue
 from win_native import Native, CopyCancelled, clipboard_text, copy_selection, clear_clipboard_if_unchanged, U
 
@@ -47,7 +48,7 @@ class App:
         if not demo:
             clear_legacy_artifacts()
         ctk.set_appearance_mode(self.preferences.theme)
-        self.root = ctk.CTk(fg_color=BG)
+        self.root = ctk.CTk(fg_color=get_palette(self.preferences.color_theme)["BG"])
         self.background_start = start_hidden
         if start_hidden:
             self.root.withdraw()
@@ -77,6 +78,7 @@ class App:
         self.export_directory = tk.StringVar(value=self.preferences.export_directory)
         self.close_to_tray = tk.BooleanVar(value=self.preferences.close_to_tray)
         self.theme = tk.StringVar(value=THEME_LABELS[self.preferences.theme])
+        self.color_theme = tk.StringVar(value=PALETTE_LABELS[self.preferences.color_theme])
         self.priority_hotkeys = tk.BooleanVar(value=self.preferences.priority_hotkeys)
         self.export_mode = tk.StringVar(value="分章 MP3" if self.preferences.chaptered_export else "单个 MP3")
         self.diagnostic_text = tk.StringVar(value="本次运行暂无错误记录；诊断仅在内存中保留。")
@@ -322,6 +324,15 @@ class App:
         ctk.set_appearance_mode(theme)
         self.theme.set(choice)
         self.preferences.theme = theme
+        self.persist()
+
+    def change_palette(self, choice):
+        palette = PALETTE_CHOICES.get(choice)
+        if palette is None:
+            raise ValueError("请选择有效的主题配色。")
+        self.ui.apply_palette(palette)
+        self.color_theme.set(choice)
+        self.preferences.color_theme = palette
         self.persist()
 
     def playback_changed(self):
@@ -571,7 +582,7 @@ class App:
                 elif kind == "first_audio" and data[0] == self.reader.number:
                     self.metrics["first_output_seconds"] = round(data[1], 3)
                     self.set_read_status(f"正在朗读 · {self.metrics.get('characters', '')} 字 · 约 {data[1]:.2f} 秒开始输出")
-                    self.dot.configure(text_color=ACCENT)
+                    self.dot.configure(text_color=self.ui.colors["ACCENT"])
                 elif kind == "played" and data[0] == self.reader.number:
                     self.metrics["buffer_gaps"] = data[1]
                     self.set_read_status("朗读完成，随时可以继续。")

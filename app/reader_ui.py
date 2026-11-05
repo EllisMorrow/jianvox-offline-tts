@@ -7,19 +7,15 @@ from reader_core import VOICES
 from version import VERSION
 from ui_tooltip import Tooltip
 from ui_artwork import icon, listening_paper
+from ui_themes import ThemeColor, get_palette, PALETTE_CHOICES
 
-BG, PANEL = ("#F9F7FD", "#1C1928"), ("#FFFFFF", "#272232")
-INK, MUTED = ("#332B49", "#F2EDF9"), ("#766A88", "#BEB2D0")
-ACCENT, HOVER = ("#7754C3", "#C0A9FF"), ("#6543B1", "#D5C1FF")
-BORDER = ("#DDD2EF", "#4A3D61")
-SIDEBAR, SELECTED = ("#F0EAF9", "#241F33"), ("#E5D9F7", "#403153")
-FIELD, CONTROL = ("#FBF9FE", "#211D2D"), ("#F1EBFA", "#352C46")
-CONTROL_BUTTON, CONTROL_HOVER = ("#E6DDF5", "#49395F"), ("#DACBED", "#5B4775")
-QUIET_HOVER, SECONDARY_HOVER = ("#E8DDF6", "#3C304E"), ("#F3ECFC", "#3B304B")
-DISABLED, TRACK = ("#9A8FAA", "#9386A7"), ("#DDD3EC", "#4A3D60")
-SCROLLBAR, SCROLLBAR_HOVER = ("#DACFEA", "#514262"), ("#C3AEDF", "#6C5782")
-PRIMARY_FILL, PRIMARY_HOVER = ("#7754C3", "#805EBB"), ("#6543B1", "#926DCB")
-SUCCESS = ("#327762", "#8BD0B4")
+BG, PANEL, INK, MUTED, ACCENT, HOVER, BORDER, SIDEBAR, SELECTED, FIELD, CONTROL, \
+    CONTROL_BUTTON, CONTROL_HOVER, QUIET_HOVER, SECONDARY_HOVER, DISABLED, TRACK, \
+    SCROLLBAR, SCROLLBAR_HOVER, PRIMARY_FILL, PRIMARY_HOVER, SUCCESS = (
+        ThemeColor(role) for role in (
+            "BG", "PANEL", "INK", "MUTED", "ACCENT", "HOVER", "BORDER", "SIDEBAR", "SELECTED",
+            "FIELD", "CONTROL", "CONTROL_BUTTON", "CONTROL_HOVER", "QUIET_HOVER", "SECONDARY_HOVER",
+            "DISABLED", "TRACK", "SCROLLBAR", "SCROLLBAR_HOVER", "PRIMARY_FILL", "PRIMARY_HOVER", "SUCCESS"))
 
 
 def window_dimensions(root):
@@ -55,6 +51,35 @@ class ReaderUI:
         self._header_mode = None
         self._toolbar_mode = None
         self._empty_visible = False
+        self.palette_name = app.preferences.color_theme
+        self.colors = get_palette(self.palette_name)
+        self.color_bindings = []
+
+    def themed(self, factory, *args, **kwargs):
+        roles = {option: value.role for option, value in kwargs.items() if isinstance(value, ThemeColor)}
+        kwargs.update({option: self.colors[role] for option, role in roles.items()})
+        widget = factory(*args, **kwargs)
+        if roles:
+            self.color_bindings.append((widget, roles))
+        return widget
+
+    def apply_palette(self, name):
+        colors = get_palette(name)
+        previous = self.colors
+        self.palette_name, self.colors = name, colors
+        self.app.root.configure(fg_color=colors["BG"])
+        for widget, roles in self.color_bindings:
+            # Runtime error/success indicators may override their initial role.
+            # Preserve those states instead of painting them as normal controls.
+            updates = {option: colors[role] for option, role in roles.items()
+                       if option != "text_color" or widget.cget(option) == previous[role]}
+            if updates:
+                widget.configure(**updates)
+        self.brand_mark.configure(image=icon("headphones", colors["ACCENT"], 25))
+        self.app.clipboard_button.configure(image=icon("clipboard", colors["MUTED"], 16))
+        self.app.export_button.configure(image=icon("export", colors["ACCENT"], 16))
+        self.empty_art.configure(image=listening_paper(name))
+        self.update_navigation()
 
     def font(self, size=13, bold=False):
         key = (size, bold)
@@ -63,7 +88,7 @@ class ReaderUI:
         return self.fonts[key]
 
     def label(self, parent, text=None, size=13, bold=False, color=INK, **kwargs):
-        return ctk.CTkLabel(parent, text=text, height=kwargs.pop("height", size+8),
+        return self.themed(ctk.CTkLabel, parent, text=text, height=kwargs.pop("height", size+8),
                             font=self.font(size, bold), text_color=color, anchor="w", **kwargs)
 
     def button(self, parent, text, command, role="secondary", **kwargs):
@@ -71,30 +96,30 @@ class ReaderUI:
                   "secondary": (PANEL, SECONDARY_HOVER, INK, 1),
                   "quiet": ("transparent", QUIET_HOVER, MUTED, 0)}
         fill, hover, ink, border = colors[role]
-        return ctk.CTkButton(parent, text=text, command=command, height=kwargs.pop("height", 38),
+        return self.themed(ctk.CTkButton, parent, text=text, command=command, height=kwargs.pop("height", 38),
                             corner_radius=kwargs.pop("corner_radius", 12), font=self.font(), fg_color=fill, hover_color=hover,
                             text_color=ink, text_color_disabled=DISABLED,
                             border_width=border, border_color=BORDER, **kwargs)
 
     def card(self, parent, **kwargs):
-        return ctk.CTkFrame(parent, fg_color=PANEL, corner_radius=18, border_width=1, border_color=BORDER, **kwargs)
+        return self.themed(ctk.CTkFrame, parent, fg_color=PANEL, corner_radius=18, border_width=1, border_color=BORDER, **kwargs)
 
     def build(self):
         app, root = self.app, self.app.root
-        root.configure(fg_color=BG)
+        root.configure(fg_color=self.colors["BG"])
         width, height, minimum_w, minimum_h = window_dimensions(root)
         root.geometry(f"{width}x{height}")
         root.minsize(minimum_w, minimum_h)
         root.grid_columnconfigure(2, weight=1)
         root.grid_rowconfigure(0, weight=1)
-        self.sidebar = ctk.CTkFrame(root, width=128, fg_color=SIDEBAR, corner_radius=0)
+        self.sidebar = self.themed(ctk.CTkFrame, root, width=128, fg_color=SIDEBAR, corner_radius=0)
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         self.sidebar.grid_propagate(False)
         self.sidebar.grid_columnconfigure(0, weight=1)
         self.sidebar.grid_rowconfigure(4, weight=1)
-        self.brand = ctk.CTkFrame(self.sidebar, fg_color="transparent")
+        self.brand = self.themed(ctk.CTkFrame, self.sidebar, fg_color="transparent")
         self.brand.grid(row=0, column=0, padx=16, pady=(22, 18), sticky="ew")
-        self.brand_mark = ctk.CTkLabel(self.brand, text="", image=icon("headphones", ACCENT, 25),
+        self.brand_mark = self.themed(ctk.CTkLabel, self.brand, text="", image=icon("headphones", self.colors["ACCENT"], 25),
                                       width=42, height=42, fg_color=SELECTED, corner_radius=14)
         self.brand_mark.pack(anchor="w", pady=(0, 10))
         self.brand_title = self.label(self.brand, "聆笺", 21, True)
@@ -103,12 +128,12 @@ class ReaderUI:
         self.brand_name.pack(anchor="w", pady=(2, 0))
         for row, (name, symbol) in enumerate([("朗读", "read"), ("快捷键", "keys"), ("设置", "settings")], 1):
             button = self.button(self.sidebar, name, lambda n=name: self.show_page(n), role="quiet", anchor="w",
-                                 image=icon(symbol, MUTED), width=108, height=40)
+                                 image=icon(symbol, self.colors["MUTED"]), width=108, height=40)
             button.grid(row=row, column=0, sticky="ew", padx=10, pady=4)
             self.nav[name] = button
         # Keep the handle outside the navigation so hiding the entire sidebar
         # returns its full width to the editor and cannot overlap a menu item.
-        self.sidebar_handle = ctk.CTkFrame(root, width=20, fg_color=BG, corner_radius=0)
+        self.sidebar_handle = self.themed(ctk.CTkFrame, root, width=20, fg_color=BG, corner_radius=0)
         self.sidebar_handle.grid(row=0, column=1, sticky="nsew")
         self.sidebar_handle.grid_propagate(False)
         self.sidebar_toggle = self.button(self.sidebar_handle, "‹", self.toggle_sidebar, role="quiet",
@@ -120,11 +145,11 @@ class ReaderUI:
         app.exit_button = self.button(self.sidebar, "退出程序", app.exit, role="quiet", width=108, height=34)
         app.exit_button.grid(row=7, column=0, padx=10, pady=(3, 16), sticky="ew")
 
-        self.workspace = ctk.CTkFrame(root, fg_color="transparent", corner_radius=0)
+        self.workspace = self.themed(ctk.CTkFrame, root, fg_color="transparent", corner_radius=0)
         self.workspace.grid(row=0, column=2, sticky="nsew", padx=(12, 24), pady=(18, 12))
         self.workspace.grid_columnconfigure(0, weight=1)
         self.workspace.grid_rowconfigure(1, weight=1)
-        self.header = ctk.CTkFrame(self.workspace, fg_color="transparent")
+        self.header = self.themed(ctk.CTkFrame, self.workspace, fg_color="transparent")
         self.header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         self.header.grid_columnconfigure(0, weight=1)
         self.title = self.label(self.header, "朗读", 22, True)
@@ -135,22 +160,22 @@ class ReaderUI:
         self.hint_label.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(5, 0))
         self.build_voice_controls(self.header)
         self.header.bind("<Configure>", self.layout_header)
-        self.page_host = ctk.CTkFrame(self.workspace, fg_color="transparent")
+        self.page_host = self.themed(ctk.CTkFrame, self.workspace, fg_color="transparent")
         self.page_host.grid(row=1, column=0, sticky="nsew")
         self.page_host.grid_columnconfigure(0, weight=1)
         self.page_host.grid_rowconfigure(0, weight=1)
         for name in self.nav:
-            page = ctk.CTkFrame(self.page_host, fg_color="transparent")
+            page = self.themed(ctk.CTkFrame, self.page_host, fg_color="transparent")
             page.grid_columnconfigure(0, weight=1)
             self.pages[name] = page
         self.build_reader(self.pages["朗读"])
         self.build_hotkeys(self.pages["快捷键"])
         self.build_settings(self.pages["设置"])
 
-        self.status_area = ctk.CTkFrame(self.workspace, fg_color="transparent")
+        self.status_area = self.themed(ctk.CTkFrame, self.workspace, fg_color="transparent")
         self.status_area.grid(row=2, column=0, sticky="ew", pady=(12, 0))
         self.status_area.grid_columnconfigure(1, weight=1)
-        app.export_progress = ctk.CTkProgressBar(self.status_area, height=4, fg_color=TRACK, progress_color=ACCENT)
+        app.export_progress = self.themed(ctk.CTkProgressBar, self.status_area, height=4, fg_color=TRACK, progress_color=ACCENT)
         app.export_progress.set(0)
         app.dot = self.label(self.status_area, "●", 12, color=ACCENT)
         app.dot.grid(row=1, column=0, sticky="nw", padx=(0, 8))
@@ -200,20 +225,24 @@ class ReaderUI:
         self.hint_label.grid(row=2)
 
     def show_page(self, name):
-        for label, page in self.pages.items():
+        for page in self.pages.values():
             page.grid_forget()
-            self.nav[label].configure(fg_color=SELECTED if label == name else "transparent",
-                                      text_color=ACCENT if label == name else MUTED,
-                                      image=icon({"朗读": "read", "快捷键": "keys", "设置": "settings"}[label],
-                                                 ACCENT if label == name else MUTED))
         self.pages[name].grid(row=0, column=0, sticky="nsew")
         self.current_page = name
+        self.update_navigation()
         self.title.configure(text={"朗读":"文字朗读", "快捷键":"键盘快捷键", "设置":"偏好设置"}[name])
         self.subtitle.configure(text={"朗读": "让文字，自然地成为声音。", "快捷键": "一个按键，随时开始倾听。",
                                       "设置": "把聆笺调成你喜欢的样子。"}[name])
         if name != "朗读":
             self.hint_label.grid(row=2)
         self.layout_header()
+
+    def update_navigation(self):
+        for label, button in self.nav.items():
+            selected = label == self.current_page
+            ink = self.colors["ACCENT" if selected else "MUTED"]
+            button.configure(fg_color=self.colors["SELECTED"] if selected else "transparent", text_color=ink,
+                             image=icon({"朗读": "read", "快捷键": "keys", "设置": "settings"}[label], ink))
 
     def show_export_progress(self):
         self.app.export_progress.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 8))
@@ -230,14 +259,14 @@ class ReaderUI:
         self.editor = editor
         editor.grid_columnconfigure(0, weight=1)
         editor.grid_rowconfigure(1, weight=1)
-        tools = ctk.CTkFrame(editor, fg_color="transparent")
+        tools = self.themed(ctk.CTkFrame, editor, fg_color="transparent")
         tools.grid(row=0, column=0, sticky="ew", padx=18, pady=(10, 4))
         self.label(tools, "朗读文字", 14, bold=True).pack(side="left")
         app.clear_button = self.button(tools, "清空", app.clear_text, role="quiet", width=50, height=28)
         app.clear_button.pack(side="right")
         app.counter = self.label(tools, "0 字", 11, color=MUTED, fg_color=CONTROL, corner_radius=9, width=60, height=26)
         app.counter.pack(side="right", padx=(8, 6))
-        app.text = ctk.CTkTextbox(editor, fg_color=PANEL, text_color=INK, corner_radius=0, border_width=0,
+        app.text = self.themed(ctk.CTkTextbox, editor, fg_color=PANEL, text_color=INK, corner_radius=0, border_width=0,
                                  wrap="word", undo=True, font=self.font(16), spacing1=3, spacing3=5,
                                  scrollbar_button_color=SCROLLBAR, scrollbar_button_hover_color=SCROLLBAR_HOVER)
         app.text.grid(row=1, column=0, sticky="nsew", padx=14, pady=(0, 8))
@@ -248,8 +277,8 @@ class ReaderUI:
                 app.text.edit_modified(False)
             self.refresh_empty_state()
         app.text.bind("<<Modified>>", changed)
-        self.empty_state = ctk.CTkFrame(app.text, fg_color=PANEL, corner_radius=0)
-        self.empty_art = ctk.CTkLabel(self.empty_state, text="", image=listening_paper(), height=148)
+        self.empty_state = self.themed(ctk.CTkFrame, app.text, fg_color=PANEL, corner_radius=0)
+        self.empty_art = self.themed(ctk.CTkLabel, self.empty_state, text="", image=listening_paper(self.palette_name), height=148)
         self.empty_art.pack()
         self.empty_title = self.label(self.empty_state, "从一段文字开始", 17, True)
         self.empty_title.pack(pady=(6, 4))
@@ -261,11 +290,11 @@ class ReaderUI:
             app.text.bind(event, self.refresh_empty_state, add="+")
         app.update_counter()
 
-        app.action_bar = ctk.CTkFrame(parent, fg_color="transparent")
+        app.action_bar = self.themed(ctk.CTkFrame, parent, fg_color="transparent")
         app.action_bar.grid(row=1, column=0, sticky="ew", pady=(12, 0))
         app.action_bar.grid_columnconfigure(0, weight=1)
-        self.playback_actions = ctk.CTkFrame(app.action_bar, fg_color="transparent")
-        self.export_actions = ctk.CTkFrame(app.action_bar, fg_color="transparent")
+        self.playback_actions = self.themed(ctk.CTkFrame, app.action_bar, fg_color="transparent")
+        self.export_actions = self.themed(ctk.CTkFrame, app.action_bar, fg_color="transparent")
         app.read_button = self.button(self.playback_actions, "朗读文字", lambda: app.read(app.text.get("1.0", "end")), "primary",
                                       image=icon("play", ("#FFFFFF", "#FFFFFF"), 15), width=116)
         app.read_button.pack(side="left", padx=(0, 8))
@@ -274,9 +303,9 @@ class ReaderUI:
         app.stop_button = self.button(self.playback_actions, "停止", app.stop, width=56)
         app.stop_button.pack(side="left", padx=(0, 8))
         app.clipboard_button = self.button(self.playback_actions, "朗读剪贴板", app.read_clipboard,
-                                           image=icon("clipboard", MUTED, 16), width=126)
+                                           image=icon("clipboard", self.colors["MUTED"], 16), width=126)
         app.clipboard_button.pack(side="left")
-        app.export_mode_menu = ctk.CTkOptionMenu(self.export_actions, variable=app.export_mode,
+        app.export_mode_menu = self.themed(ctk.CTkOptionMenu, self.export_actions, variable=app.export_mode,
             values=["单个 MP3", "分章 MP3"], command=app.change_export_mode, width=104, height=36, corner_radius=10,
             fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER,
             text_color=INK, text_color_disabled=DISABLED, dropdown_fg_color=PANEL,
@@ -284,7 +313,7 @@ class ReaderUI:
             font=self.font(11), dropdown_font=self.font(12))
         app.export_mode_menu.pack(side="left", padx=(0, 8))
         app.export_button = self.button(self.export_actions, "导出 MP3", app.export_mp3,
-                                        image=icon("export", ACCENT, 16), width=114)
+                                        image=icon("export", self.colors["ACCENT"], 16), width=114)
         app.export_button.pack(side="left", padx=(0, 8))
         app.estimate_button = self.button(self.export_actions, "导出MP3时间预估", app.estimate_export_time, width=150)
         app.estimate_button.pack(side="left")
@@ -327,13 +356,13 @@ class ReaderUI:
 
     def build_voice_controls(self, parent):
         app = self.app
-        self.voice_controls = ctk.CTkFrame(parent, fg_color=CONTROL, corner_radius=15,
+        self.voice_controls = self.themed(ctk.CTkFrame, parent, fg_color=CONTROL, corner_radius=15,
                                            border_width=1, border_color=BORDER)
         self.voice_controls.grid_columnconfigure(0, weight=1)
-        voice = ctk.CTkFrame(self.voice_controls, fg_color="transparent")
+        voice = self.themed(ctk.CTkFrame, self.voice_controls, fg_color="transparent")
         voice.grid(row=0, column=0, sticky="ew", padx=(12, 14), pady=9)
         self.label(voice, "声音", 11, color=MUTED, height=17).pack(anchor="w", pady=(0, 3))
-        app.voice_menu = ctk.CTkOptionMenu(voice, variable=app.voice, values=list(VOICES), width=184, height=30, corner_radius=10,
+        app.voice_menu = self.themed(ctk.CTkOptionMenu, voice, variable=app.voice, values=list(VOICES), width=184, height=30, corner_radius=10,
             fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER, text_color=INK,
             text_color_disabled=DISABLED, dropdown_fg_color=PANEL, dropdown_text_color=INK, dropdown_hover_color=SELECTED,
             font=self.font(11), dropdown_font=self.font(12), command=lambda _: app.defer_save())
@@ -341,9 +370,9 @@ class ReaderUI:
         for column, (title, variable, value, minimum, maximum, steps, attribute) in enumerate([
             ("语速", app.speed, app.speed_text, .75, 1.5, 15, "speed_slider"),
             ("音量", app.volume, app.volume_text, 0, 1.5, 150, "volume_slider")], 1):
-            group = ctk.CTkFrame(self.voice_controls, fg_color="transparent", width=140 if column == 1 else 124)
+            group = self.themed(ctk.CTkFrame, self.voice_controls, fg_color="transparent", width=140 if column == 1 else 124)
             group.grid(row=0, column=column, sticky="ew", padx=(0, 14) if column == 1 else (0, 12), pady=9)
-            row = ctk.CTkFrame(group, fg_color="transparent")
+            row = self.themed(ctk.CTkFrame, group, fg_color="transparent")
             row.pack(fill="x", pady=(0, 6))
             self.label(row, title, 11, color=MUTED).pack(side="left")
             if column == 1:
@@ -351,7 +380,7 @@ class ReaderUI:
                 self.reset_speed_button.pack(side="right", padx=(4, 0))
                 self.speed_tooltip = Tooltip(self.reset_speed_button, "恢复标准语速（1.00×）。")
             self.label(row, textvariable=value, size=11, bold=True, color=ACCENT).pack(side="right")
-            slider = ctk.CTkSlider(group, width=140 if column == 1 else 124, height=20, from_=minimum, to=maximum, number_of_steps=steps, variable=variable,
+            slider = self.themed(ctk.CTkSlider, group, width=140 if column == 1 else 124, height=20, from_=minimum, to=maximum, number_of_steps=steps, variable=variable,
                 fg_color=TRACK, progress_color=ACCENT, button_color=ACCENT, button_hover_color=HOVER,
                 command=lambda _: app.playback_changed())
             slider.pack(fill="x", pady=(1, 3))
@@ -370,7 +399,7 @@ class ReaderUI:
         app.key_entries = {}
         for row, (action, title) in enumerate(ACTION_NAMES.items(), 2):
             self.label(card, title, width=115).grid(row=row, column=0, sticky="w", padx=(20, 14), pady=5)
-            entry = ctk.CTkEntry(card, height=36, font=self.font(), fg_color=FIELD, border_color=BORDER, corner_radius=10,
+            entry = self.themed(ctk.CTkEntry, card, height=36, font=self.font(), fg_color=FIELD, border_color=BORDER, corner_radius=10,
                                  text_color=INK, placeholder_text_color=DISABLED)
             entry.insert(0, app.preferences.hotkeys[action])
             entry.grid(row=row, column=1, sticky="ew", pady=5)
@@ -378,12 +407,12 @@ class ReaderUI:
             app.key_entries[action] = entry
         app.key_status = self.label(card, "", 11, color=MUTED, wraplength=480)
         app.key_status.grid(row=5, column=0, columnspan=3, sticky="w", padx=20, pady=(5, 5))
-        actions = ctk.CTkFrame(card, fg_color="transparent")
+        actions = self.themed(ctk.CTkFrame, card, fg_color="transparent")
         actions.grid(row=6, column=0, columnspan=3, sticky="ew", padx=20, pady=(4, 14))
         app.key_save = self.button(actions, "保存快捷键", app.apply_hotkeys, "primary", width=124)
         app.key_save.pack(side="left")
         self.button(actions, "填入默认值", app.default_keys, "quiet", width=124).pack(side="left", padx=10)
-        app.priority_checkbox = ctk.CTkCheckBox(actions, text="优先接管已占用快捷键", variable=app.priority_hotkeys,
+        app.priority_checkbox = self.themed(ctk.CTkCheckBox, actions, text="优先接管已占用快捷键", variable=app.priority_hotkeys,
             checkbox_width=18, checkbox_height=18, width=178, height=28, font=self.font(11),
             fg_color=PRIMARY_FILL, hover_color=PRIMARY_HOVER, border_color=MUTED,
             text_color=INK, checkmark_color="#FFFFFF")
@@ -396,7 +425,7 @@ class ReaderUI:
     def build_settings(self, parent):
         app = self.app
         parent.grid_rowconfigure(0, weight=1)
-        panel = ctk.CTkScrollableFrame(parent, fg_color="transparent", corner_radius=0,
+        panel = self.themed(ctk.CTkScrollableFrame, parent, fg_color="transparent", corner_radius=0,
                                       scrollbar_button_color=SCROLLBAR, scrollbar_button_hover_color=SCROLLBAR_HOVER)
         panel.grid(row=0, column=0, sticky="nsew")
         panel.grid_columnconfigure(0, weight=1)
@@ -405,20 +434,28 @@ class ReaderUI:
         appearance.grid(row=0, column=0, sticky="ew", pady=(0, 14))
         appearance.grid_columnconfigure(0, weight=1)
         self.label(appearance, "外观主题", 14, True).grid(row=0, column=0, sticky="w", padx=18, pady=(15, 3))
-        self.label(appearance, "跟随系统会自动匹配 Windows 外观。", 11, color=MUTED).grid(
+        self.label(appearance, "每套配色均支持明暗，跟随系统会自动切换。", 11, color=MUTED).grid(
             row=1, column=0, sticky="w", padx=18, pady=(0, 15))
-        app.theme_menu = ctk.CTkOptionMenu(appearance, variable=app.theme,
+        app.theme_menu = self.themed(ctk.CTkOptionMenu, appearance, variable=app.theme,
             values=["白天", "夜晚", "跟随系统"], command=app.change_theme, width=132, height=32, corner_radius=10,
             fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER,
             text_color=INK, text_color_disabled=DISABLED, dropdown_fg_color=PANEL,
             dropdown_text_color=INK, dropdown_hover_color=SELECTED,
             font=self.font(12), dropdown_font=self.font(12))
         app.theme_menu.grid(row=0, column=1, rowspan=2, sticky="e", padx=18, pady=14)
+        self.label(appearance, "主题配色", 12).grid(row=2, column=0, sticky="w", padx=18, pady=(0, 15))
+        app.palette_menu = self.themed(ctk.CTkOptionMenu, appearance, variable=app.color_theme,
+            values=list(PALETTE_CHOICES), command=app.change_palette, width=132, height=32, corner_radius=10,
+            fg_color=CONTROL, button_color=CONTROL_BUTTON, button_hover_color=CONTROL_HOVER,
+            text_color=INK, text_color_disabled=DISABLED, dropdown_fg_color=PANEL,
+            dropdown_text_color=INK, dropdown_hover_color=SELECTED,
+            font=self.font(12), dropdown_font=self.font(12))
+        app.palette_menu.grid(row=2, column=1, sticky="e", padx=18, pady=(0, 15))
         style = self.card(panel)
         style.grid(row=1, column=0, sticky="ew", pady=(0, 14))
         self.label(style, "朗读语气", 14, True).pack(anchor="w", padx=18, pady=(16, 5))
         self.label(style, "描述节奏与情绪，保存后在下次朗读生效。", 11, color=MUTED).pack(anchor="w", padx=18, pady=(0, 10))
-        app.style_box = ctk.CTkTextbox(style, height=78, fg_color=FIELD, text_color=INK, border_width=1,
+        app.style_box = self.themed(ctk.CTkTextbox, style, height=78, fg_color=FIELD, text_color=INK, border_width=1,
                                       border_color=BORDER, font=self.font(), wrap="word", corner_radius=12,
                                       scrollbar_button_color=SCROLLBAR, scrollbar_button_hover_color=SCROLLBAR_HOVER)
         app.style_box.pack(fill="x", padx=18)
@@ -428,17 +465,17 @@ class ReaderUI:
         general.grid(row=2, column=0, sticky="ew", pady=(0, 14))
         self.label(general, "保存与启动", 14, True).pack(anchor="w", padx=18, pady=(16, 12))
         self.label(general, "MP3 默认保存目录", 12).pack(anchor="w", padx=18, pady=(0, 6))
-        row = ctk.CTkFrame(general, fg_color="transparent")
+        row = self.themed(ctk.CTkFrame, general, fg_color="transparent")
         row.pack(fill="x", padx=18, pady=(0, 16))
-        ctk.CTkEntry(row, textvariable=app.export_directory, state="readonly", height=36, font=self.font(12),
+        self.themed(ctk.CTkEntry, row, textvariable=app.export_directory, state="readonly", height=36, font=self.font(12),
                      fg_color=FIELD, border_color=BORDER, text_color=INK, corner_radius=10,
                      placeholder_text_color=DISABLED).pack(side="left", fill="x", expand=True)
         self.button(row, "选择目录", app.choose_directory, width=100, height=36).pack(side="right", padx=(10, 0))
-        ctk.CTkSwitch(general, text="开机启动后进入托盘", variable=app.startup_enabled,
+        self.themed(ctk.CTkSwitch, general, text="开机启动后进入托盘", variable=app.startup_enabled,
                       command=app.change_startup, fg_color=TRACK, progress_color=PRIMARY_FILL,
                       button_color=("#FFFFFF", "#ECECF4"), button_hover_color=("#F5F5FB", "#FFFFFF"),
                       text_color=INK, text_color_disabled=DISABLED, font=self.font()).pack(anchor="w", padx=18, pady=(0, 17))
-        app.close_to_tray_switch = ctk.CTkSwitch(
+        app.close_to_tray_switch = self.themed(ctk.CTkSwitch,
             general, text="点击关闭按钮后进入系统托盘", variable=app.close_to_tray,
             command=app.change_close_to_tray, fg_color=TRACK, progress_color=PRIMARY_FILL,
             button_color=("#FFFFFF", "#ECECF4"), button_hover_color=("#F5F5FB", "#FFFFFF"),
@@ -459,7 +496,7 @@ class ReaderUI:
                    11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 10))
         self.label(recovery, textvariable=app.diagnostic_text, size=11, color=MUTED,
                    justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 12))
-        actions = ctk.CTkFrame(recovery, fg_color="transparent")
+        actions = self.themed(ctk.CTkFrame, recovery, fg_color="transparent")
         actions.pack(anchor="w", padx=18, pady=(0, 16))
         app.recovery_button = self.button(actions, "重新加载声音", app.reload_model, width=125, height=34)
         app.recovery_button.pack(side="left")

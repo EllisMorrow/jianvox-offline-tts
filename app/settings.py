@@ -5,6 +5,7 @@ import logging
 import os
 from pathlib import Path
 from hotkeys import DEFAULT_HOTKEYS, validate_bindings
+from ui_themes import PALETTE_LABELS
 
 PROJECT = Path(__file__).resolve().parent.parent
 LOCAL = PROJECT / ".local"
@@ -55,12 +56,15 @@ class Preferences:
     export_directory: str = ""
     chaptered_export: bool = False
     close_to_tray: bool = True
+    color_theme: str = "lavender"
 
     def validate(self):
         if self.voice not in {"serena", "vivian", "uncle_fu", "dylan", "eric", "ryan", "aiden", "ono_anna", "sohee"}:
             raise ValueError("请选择有效的声音。")
         if not isinstance(self.theme, str) or self.theme not in {"light", "dark", "system"}:
             raise ValueError("请选择有效的界面主题。")
+        if not isinstance(self.color_theme, str) or self.color_theme not in PALETTE_LABELS:
+            raise ValueError("请选择有效的主题配色。")
         if not isinstance(self.style, str) or len(self.style) > 500:
             raise ValueError("语气说明最多 500 字。")
         if not isinstance(self.speed, (float, int)) or not .75 <= self.speed <= 1.5:

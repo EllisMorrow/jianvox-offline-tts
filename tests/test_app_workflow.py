@@ -10,6 +10,7 @@ from reader_app import App
 from reader_core import Reader, AudioBuffer
 from export_estimate import analyze_text, select_sample, Calibration
 from runtime_errors import RuntimeIssue
+from ui_themes import get_palette
 
 
 class WorkflowTests(unittest.TestCase):
@@ -37,6 +38,7 @@ class WorkflowTests(unittest.TestCase):
         app.export_error = None
         app.text = Mock()
         app.ui = Mock()
+        app.ui.colors = get_palette("lavender")
         app.dot = Mock()
         app.diagnostic_text = Mock()
         app.last_issue = None

@@ -115,6 +115,7 @@ try:
                             app.root.update()
                             contains(app.theme_menu, app.ui.pages["设置"],
                                      f"theme selection {(theme, scale, width, height, collapsed, cases)}")
+                            contains(app.palette_menu, app.ui.pages["设置"], "palette selection")
                             app.ui.settings_panel._parent_canvas.yview_moveto(1)
                             app.root.update()
                             contains(app.recovery_button, app.ui.pages["设置"], "model recovery button")

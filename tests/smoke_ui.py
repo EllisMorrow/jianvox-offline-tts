@@ -10,6 +10,9 @@ import customtkinter as ctk
 from reader_app import App
 from settings import Preferences
 from reader_ui import PANEL
+from reader_app import ERROR_COLOR
+from ui_themes import PALETTES, PALETTE_LABELS
+from ui_artwork import listening_paper
 from reader_core import AudioBuffer
 
 stdout, stderr = sys.stdout, sys.stderr
@@ -108,6 +111,36 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
                 assert ctk.get_appearance_mode() == "Dark"
                 assert app.text._textbox.cget("background").lower() == PANEL[1].lower()
                 assert app.preferences.theme == "system"
+            original_text = app.text.get("1.0", "end-1c")
+            app.text.edit_separator()
+            app.text.insert("end", "保留撤销记录。")
+            expected_text = app.text.get("1.0", "end-1c")
+            app.text.edit_separator()
+            app.show_error("公开的配色状态测试。")
+            for palette_id, palette_label in PALETTE_LABELS.items():
+                for choice, appearance, mode in (("白天", "Light", 0), ("夜晚", "Dark", 1),
+                                                 ("跟随系统", "Light", 0)):
+                    with patch("darkdetect.theme", return_value=appearance):
+                        app.theme_menu._dropdown_callback(choice)
+                        ctk.AppearanceModeTracker.init_appearance_mode()
+                        app.palette_menu._dropdown_callback(palette_label)
+                        app.root.update()
+                        colors = PALETTES[palette_id]
+                        assert app.preferences.color_theme == palette_id
+                        assert app.text._textbox.cget("background").lower() == colors["PANEL"][mode].lower()
+                        assert app.voice_menu.cget("dropdown_fg_color") == colors["PANEL"]
+                        assert app.volume_slider.cget("progress_color") == colors["ACCENT"]
+                        assert app.ui.nav["朗读"].cget("fg_color") == colors["SELECTED"]
+                        assert app.ui.empty_art.cget("image") is listening_paper(palette_id)
+                        assert app.dot.cget("text_color") == ERROR_COLOR, "Palette erased the error indicator"
+                        assert app.status.get() == "公开的配色状态测试。"
+                        assert app.text is original_editor and app.reader is original_reader and app.exporting
+                        assert app.text.get("1.0", "end-1c") == expected_text
+            app.text.edit_undo()
+            assert app.text.get("1.0", "end-1c") == original_text, "Palette changes damaged undo history"
+            app.palette_menu._dropdown_callback("鸢尾紫")
+            app.theme_menu._dropdown_callback("跟随系统")
+            app.dot.configure(text_color=app.ui.colors["ACCENT"])
         app.reader = None
         app.exporting = False
         app.clear_text()

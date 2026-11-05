@@ -7,6 +7,7 @@ from functools import lru_cache
 
 import customtkinter as ctk
 from PIL import Image, ImageDraw
+from ui_themes import ARTWORK_COLORS
 
 
 def _drawing(width, height):
@@ -70,14 +71,11 @@ def icon(name, colors, size=18):
     return ctk.CTkImage(light_image=images[0], dark_image=images[1], size=(size, size))
 
 
-@lru_cache(maxsize=1)
-def listening_paper():
+@lru_cache(maxsize=5)
+def listening_paper(palette="lavender"):
     """An unlabelled paper-and-headphones vignette for the empty editor."""
     images = []
-    for halo, paper, ink, purple, pale, mint in (
-        ("#F2ECFB", "#FFFFFF", "#79638F", "#9473D2", "#E1D3F4", "#C8E6DA"),
-        ("#342A47", "#30283F", "#C4AEDF", "#B99CE9", "#4A385F", "#7EBAA7"),
-    ):
+    for halo, paper, ink, purple, pale, mint in ARTWORK_COLORS[palette]:
         image, draw, scale, line, rounded = _drawing(260, 148)
         draw.ellipse((29 * scale, 9 * scale, 232 * scale, 143 * scale), fill=halo)
         draw.ellipse((69 * scale, 129 * scale, 211 * scale, 138 * scale), fill=pale)
