@@ -140,6 +140,8 @@ class ReaderUI:
                                            width=20, height=48, corner_radius=8)
         self.sidebar_toggle.place(relx=.5, rely=.5, anchor="center")
         self.sidebar_tooltip = Tooltip(self.sidebar_toggle, "收起或展开左侧导航。")
+        app.update_button = self.button(self.sidebar, "检查更新", app.check_updates, role="quiet", width=108, height=34)
+        app.update_button.grid(row=5, column=0, padx=10, pady=3, sticky="ew")
         app.hide_button = self.button(self.sidebar, "隐藏到托盘", app.hide, role="quiet", width=108, height=34)
         app.hide_button.grid(row=6, column=0, padx=10, pady=3, sticky="ew")
         app.exit_button = self.button(self.sidebar, "退出程序", app.exit, role="quiet", width=108, height=34)

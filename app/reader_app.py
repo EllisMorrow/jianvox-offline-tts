@@ -102,6 +102,20 @@ class App:
             self.root.after(100, self.show)
         self.root.mainloop()
 
+    def check_updates(self):
+        if getattr(self, "checking_updates", False):
+            return
+        self.checking_updates = True
+        self.update_button.configure(state="disabled", text="正在检查…")
+        def work():
+            from update_check import latest_version
+            try:
+                result = latest_version()
+            except (OSError, ValueError, KeyError, TypeError):
+                result = None
+            self.events.put(("update_checked", result))
+        threading.Thread(target=work, daemon=True, name="update-check").start()
+
     def build(self):
         self.ui = ReaderUI(self)
         self.ui.build()
@@ -480,7 +494,20 @@ class App:
             for _ in range(100):
                 kind, data = self.events.get_nowait()
                 changed = True
-                if kind == "read_selection":
+                if kind == "update_checked":
+                    self.checking_updates = False
+                    self.update_button.configure(state="normal", text="检查更新")
+                    if data is None:
+                        messagebox.showwarning("检查更新", "无法检测更新，请检查网络或稍后重试。", parent=self.root)
+                    else:
+                        from update_check import is_newer, RELEASE_URL
+                        if is_newer(data, VERSION):
+                            if messagebox.askyesno("发现新版本", f"已有新版本 {data}，请到仓库下载。是否打开下载页？", parent=self.root):
+                                import webbrowser
+                                webbrowser.open(RELEASE_URL)
+                        else:
+                            messagebox.showinfo("检查更新", "当前已是最新版本，没有发现新版本。", parent=self.root)
+                elif kind == "read_selection":
                     self.selection(data)
                 elif kind == "selection_copied" and data[2] == self.reader.number:
                     self.accept_clipboard(data[0], data[3], data[1])
