@@ -19,6 +19,8 @@ def latest_version():
     if len(payload) > 262144:
         raise ValueError('Release response too large')
     data = json.loads(payload)
+    if not isinstance(data, dict):
+        raise ValueError('Invalid release response')
     if data.get('draft') or data.get('prerelease'):
         raise ValueError('Not a stable release')
     version = str(Version(data['tag_name']))

@@ -24,7 +24,7 @@ class UpdateTests(unittest.TestCase):
         with patch('update_check.urlopen', side_effect=OSError('offline')):
             with self.assertRaises(OSError):
                 latest_version()
-        for payload in (b'bad json', b'{}', b'{"tag_name":"invalid"}', b'x'*262145,
+        for payload in (b'bad json', b'[]', b'null', b'{}', b'{"tag_name":"invalid"}', b'x'*262145,
                         b'{"tag_name":"v1.0","prerelease":true}'):
             response = MagicMock()
             response.__enter__.return_value.read.return_value = payload
