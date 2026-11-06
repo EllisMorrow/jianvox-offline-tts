@@ -35,6 +35,63 @@ class _WorkerFault(Exception):
         self.code, self.fatal = code, fatal
 
 
+class _AudioProgress:
+    """A live IPC heartbeat is not proof that synthesis is producing sound.
+
+    Inspect raw model output, before volume/tempo/playback, so muting or pausing
+    cannot trigger this guard. Allow normal pauses and initial codec buffering;
+    never silently skip text or replay already audible speech on failure.
+    """
+    MAX_EMPTY_CHUNKS = 8
+    MAX_SILENCE_SECONDS = 12.0
+    SILENCE_PEAK = 1e-5
+    MAX_NOISE_RMS = 1e-4
+    MAX_NOISE_PEAK = 1e-3
+    RELATIVE_NOISE_RMS = .005
+    RELATIVE_NOISE_PEAK = .05
+
+    def __init__(self):
+        self.empty_chunks = 0
+        self.silent_seconds = 0.0
+        self.heard_sound = False
+        self.reference_rms = 0.0
+
+    def observe(self, wave, rate):
+        import numpy as np
+        if rate != 24000:
+            raise ModelFailure("sample_rate")
+        data = np.asarray(wave, dtype=np.float32).reshape(-1)
+        if not np.isfinite(data).all():
+            raise ModelFailure("invalid_audio")
+        if not data.size:
+            self.empty_chunks += 1
+            if self.empty_chunks >= self.MAX_EMPTY_CHUNKS:
+                raise ModelFailure("audio_stalled")
+            return
+        self.empty_chunks = 0
+        peak = float(np.max(np.abs(data)))
+        rms = float(np.sqrt(np.mean(data * data)))
+        self.reference_rms = max(self.reference_rms, rms)
+        # The observed failure is a low-level codec noise floor, not zero PCM.
+        # Require BOTH an absolute quiet level and a large drop from this
+        # segment's own signal. Uniformly quiet voices keep their own scale.
+        rms_limit = max(self.SILENCE_PEAK, min(
+            self.MAX_NOISE_RMS, self.reference_rms * self.RELATIVE_NOISE_RMS))
+        peak_limit = max(self.SILENCE_PEAK, min(
+            self.MAX_NOISE_PEAK, self.reference_rms * self.RELATIVE_NOISE_PEAK))
+        if rms <= rms_limit and peak <= peak_limit:
+            self.silent_seconds += data.size / rate
+            if self.silent_seconds >= self.MAX_SILENCE_SECONDS:
+                raise ModelFailure("audio_stalled")
+        else:
+            self.heard_sound = True
+            self.silent_seconds = 0.0
+
+    def finish(self):
+        if not self.heard_sound:
+            raise ModelFailure("audio_stalled")
+
+
 def _error_category(error):
     if isinstance(error, _WorkerFault):
         return error.code, error.fatal
@@ -318,6 +375,7 @@ class ModelClient:
         if active is not None and not active():
             return
         completed = False
+        progress = _AudioProgress()
         self._send(("stream", text, speaker, style))
         text = None
         try:
@@ -331,9 +389,11 @@ class ModelClient:
                 if packet is None:
                     return
                 if packet[0] == "done":
+                    progress.finish()
                     completed = True
                     return
                 self._check(packet, "wave")
+                progress.observe(packet[1], packet[2])
                 yield packet[1], packet[2], packet[3]
                 packet = None
         finally:

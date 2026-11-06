@@ -141,6 +141,42 @@ class ReaderRecoveryTests(unittest.TestCase):
         self.event(events, "generated", number=number)
         self.assertEqual(model.starts, 2)
 
+    def test_stalled_audio_stops_instead_of_skipping_text_or_claiming_completion(self):
+        class StalledModel(FakeModel):
+            def stream(self, text, speaker, style, active=None):
+                self.texts.append(text)
+                yield np.ones(2400, dtype=np.float32) * .1, 24000, {}
+                if len(self.texts) == 1:
+                    raise ModelFailure("audio_stalled")
+
+        reader, model, _, events = self.reader(model=StalledModel())
+        self.event(events, "ready")
+        reader.submit("用于检查中途停止的公开文字。" * 40)
+        self.assertEqual(self.event(events, "issue").code, "audio_stalled")
+        self.idle(reader)
+        self.assertEqual(len(model.texts), 1)
+        self.assertEqual(reader.audio.seconds(), 0)
+        self.assertFalse(reader.audio.active)
+        self.assertFalse(any(kind in {"generated", "played"} for kind, _ in list(events.queue)))
+        number = reader.submit("用户重新选择的文字。")
+        self.event(events, "generated", number=number)
+        self.assertEqual(model.starts, 1)
+
+    def test_stalled_export_removes_partial_mp3_and_never_reports_success(self):
+        class StalledModel(FakeModel):
+            def stream(self, text, speaker, style, active=None):
+                yield np.ones(2400, dtype=np.float32) * .1, 24000, {}
+                raise ModelFailure("audio_stalled")
+
+        reader, _, _, events = self.reader(model=StalledModel())
+        self.event(events, "ready")
+        with tempfile.TemporaryDirectory() as tmp:
+            reader.submit("公开导出检测文字。", output=Path(tmp) / "partial.mp3")
+            self.assertEqual(self.event(events, "issue").code, "audio_stalled")
+            self.event(events, "export_cancelled")
+            self.assertEqual(list(Path(tmp).iterdir()), [])
+            self.assertFalse(any(kind == "export_done" for kind, _ in list(events.queue)))
+
     def test_failed_automatic_reload_waits_for_explicit_restart(self):
         model = FakeModel()
         model.fail_loads.add(2)

@@ -6,7 +6,7 @@ import sys
 import time
 import unittest
 
-from model_worker import ModelClient, ModelFailure, ModelTimings, _error_category, _WorkerFault
+from model_worker import ModelClient, ModelFailure, ModelTimings, _error_category, _WorkerFault, _AudioProgress
 
 
 def fake_worker(connection):
@@ -38,6 +38,18 @@ def fake_worker(connection):
                 return
             elif text == "limit":
                 connection.send(("error", "generation_limit", False))
+            elif text in {"empty_audio", "silent_audio", "noise_audio"}:
+                if count > 20:
+                    connection.send(("done",))
+                else:
+                    wave = ([.1] if count == 1 else
+                            [] if text == "empty_audio" else [0.0] * 24000)
+                    if count > 1 and text == "noise_audio":
+                        wave = [1.65e-5] * 24000
+                        wave[0] = 7.2e-5
+                    connection.send(("wave", wave, 24000, {"total_steps_so_far": count * 8}))
+            elif text == "no_audio_done":
+                connection.send(("done",))
             elif text == "slow":
                 time.sleep(.12)
                 connection.send(("wave", [1, 2], 24000, {"total_steps_so_far": count}))
@@ -68,6 +80,24 @@ class ModelClientTests(unittest.TestCase):
         client.close()
         self.assertFalse(client.available)
         self.assertIsNone(client._process)
+
+    def test_live_worker_with_no_sound_is_cancelled_and_remains_reusable(self):
+        # Before the fix each packet reset the receive timeout indefinitely.
+        # Cleanup must not replay the failed request.
+        for text in ("empty_audio", "silent_audio", "noise_audio", "no_audio_done"):
+            with self.subTest(mode=text):
+                client = self.client(chunk=2)
+                client.start()
+                process_id = client._process.pid
+                started = time.monotonic()
+                with self.assertRaises(ModelFailure) as caught:
+                    list(client.stream(text, "serena", ""))
+                self.assertEqual(caught.exception.code, "audio_stalled")
+                self.assertLess(time.monotonic() - started, 3)
+                self.assertTrue(client.available)
+                self.assertEqual(client._process.pid, process_id)
+                self.assertEqual(len(list(client.stream("next request", "serena", ""))), 2)
+                client.close()
 
     def test_startup_timeout_terminates_child_and_can_restart(self):
         client = self.client("startup_hang", startup=.15)
@@ -208,6 +238,73 @@ class ModelClientTests(unittest.TestCase):
                 (ValueError("private user content"), ("generation_failed", True)),
                 (_WorkerFault("cache_limit"), ("cache_limit", False))):
             self.assertEqual(_error_category(error), expected)
+
+
+class AudioProgressTests(unittest.TestCase):
+    def test_observed_codec_noise_tail_is_stopped_after_normal_speech(self):
+        import numpy as np
+        guard = _AudioProgress()
+        guard.observe(np.full(24000, .04, dtype=np.float32), 24000)
+        # Captured failure: RMS ~1.6e-5, peak ~7e-5, continuously increasing
+        # generation steps. The previous 1e-5 peak-only guard missed this.
+        noise = np.full(24000, 1.65e-5, dtype=np.float32)
+        noise[0] = 7.2e-5
+        for _ in range(11):
+            guard.observe(noise, 24000)
+        with self.assertRaises(ModelFailure) as caught:
+            guard.observe(noise, 24000)
+        self.assertEqual(caught.exception.code, 'audio_stalled')
+
+    def test_quiet_speech_and_short_noise_pauses_after_normal_speech_survive(self):
+        import numpy as np
+        guard = _AudioProgress()
+        guard.observe(np.full(24000, .04, dtype=np.float32), 24000)
+        for _ in range(5):
+            guard.observe(np.full(24000 * 3, 1.65e-5, dtype=np.float32), 24000)
+            guard.observe(np.full(24000, .0003, dtype=np.float32), 24000)
+        guard.finish()
+
+    def test_empty_chunks_are_bounded_but_initial_buffering_is_allowed(self):
+        guard = _AudioProgress()
+        for _ in range(7):
+            guard.observe([], 24000)
+        guard.observe([.01], 24000)
+        guard.finish()
+        for _ in range(7):
+            guard.observe([], 24000)
+        with self.assertRaises(ModelFailure) as caught:
+            guard.observe([], 24000)
+        self.assertEqual(caught.exception.code, "audio_stalled")
+
+    def test_long_silent_tail_is_not_valid_progress(self):
+        guard = _AudioProgress()
+        guard.observe([.1], 24000)
+        guard.observe([0.0] * (24000 * 11), 24000)
+        with self.assertRaises(ModelFailure) as caught:
+            guard.observe([0.0] * 24000, 24000)
+        self.assertEqual(caught.exception.code, "audio_stalled")
+
+    def test_normal_pauses_and_very_quiet_speech_do_not_accumulate(self):
+        guard = _AudioProgress()
+        for _ in range(5):
+            guard.observe([0.0] * (24000 * 3), 24000)
+            guard.observe([2e-5] * 24000, 24000)
+        guard.finish()
+
+    def test_finish_refuses_empty_or_entirely_silent_output(self):
+        for wave in ([], [0.0] * 24000):
+            guard = _AudioProgress()
+            guard.observe(wave, 24000)
+            with self.assertRaises(ModelFailure) as caught:
+                guard.finish()
+            self.assertEqual(caught.exception.code, "audio_stalled")
+
+    def test_no_content_or_exception_details_in_progress_error(self):
+        for wave, rate, code in (([float('nan')], 24000, 'invalid_audio'),
+                                 ([.1], 48000, 'sample_rate')):
+            with self.assertRaises(ModelFailure) as caught:
+                _AudioProgress().observe(wave, rate)
+            self.assertEqual(str(caught.exception), code)
 
 
 if __name__ == "__main__":
