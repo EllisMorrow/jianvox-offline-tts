@@ -94,6 +94,24 @@ class Backend:
 
 
 class AudioOutputTests(unittest.TestCase):
+    def test_idle_releases_stream_and_resume_reopens_current_device(self):
+        needed = threading.Event()
+        output, endpoint, backend = self.output(activity=needed.is_set)
+        time.sleep(.05)
+        self.assertEqual(backend.streams, [])
+        needed.set()
+        self.assertEqual(output.ensure_available(.5), 'A')
+        needed.clear()
+        output.wake.set()
+        self.wait_for(lambda: backend.streams[0].closed)
+        self.assertFalse(output.available)
+        time.sleep(.05)
+        self.assertEqual(len(backend.streams), 1)
+        endpoint.value = 'B'
+        needed.set()
+        self.assertEqual(output.ensure_available(.5), 'B')
+        self.assertEqual(len(backend.streams), 2)
+
     def wait_for(self, predicate, timeout=1):
         deadline = time.monotonic() + timeout
         while not predicate() and time.monotonic() < deadline:

@@ -304,6 +304,21 @@ class ReaderRecoveryTests(unittest.TestCase):
             self.assertTrue(reader.audio.paused)
             self.assertEqual(reader.audio.seconds(), buffered)
 
+    def test_pausing_can_release_device_without_triggering_recovery_timeout(self):
+        reader, _, output, events = self.reader()
+        self.event(events, "ready")
+        reader.submit("公开暂停检测文字。")
+        self.event(events, "generated")
+        self.assertTrue(reader.toggle_pause())
+        output.available = False
+        reader.audio_missing_since = (reader.number, time.monotonic() - 60)
+        self.assertIsNone(reader._playback_expired())
+        self.assertIsNone(reader.audio_missing_since)
+        self.assertTrue(reader.audio.active)
+        self.assertTrue(reader.toggle_pause() is False)
+        self.assertIsNone(reader._playback_expired())
+        self.assertIsNotNone(reader.audio_missing_since)
+
     def test_export_and_probe_work_without_playback_device(self):
         reader, _, output, events = self.reader(output=FakeOutput(available=False))
         self.event(events, "ready")

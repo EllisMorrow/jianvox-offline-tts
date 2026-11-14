@@ -102,8 +102,9 @@ class AudioOutput:
     explicit request; reinserting/changing the endpoint starts a fresh attempt.
     """
     def __init__(self, events, callback, *, sd=None, endpoint_factory=None,
-                 poll_interval=.75, retry_delays=(0, 1, 3), callback_timeout=4):
+                 poll_interval=.75, retry_delays=(0, 1, 3), callback_timeout=4, activity=None):
         self.events, self.callback = events, callback
+        self.activity = activity
         self.sd = sd
         self.endpoint_factory = endpoint_factory or WindowsDefaultEndpoint
         self.poll_interval = poll_interval
@@ -237,6 +238,14 @@ class AudioOutput:
                 if requested != request:
                     request, attempt, next_attempt = requested, 0, 0.0
                     provider_attempt, provider_next_attempt = 0, 0.0
+                if self.activity is not None and not self.activity():
+                    # A running silent WASAPI stream can keep Windows awake.
+                    # Release it on the owner thread, retaining the loaded model.
+                    if self._stream is not None and not self._close_stream():
+                        raise AudioOutputError("Idle audio stream could not close")
+                    self.wake.wait(self.poll_interval)
+                    self.wake.clear()
+                    continue
                 if provider is None:
                     if (provider_attempt >= len(self.retry_delays)
                             or time.monotonic() < provider_next_attempt):

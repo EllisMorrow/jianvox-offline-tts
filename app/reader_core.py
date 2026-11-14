@@ -122,6 +122,10 @@ class AudioBuffer:
             self.paused = not self.paused
             return self.paused
 
+    def needs_output(self):
+        with self.lock:
+            return self.active and not self.paused
+
     def set_volume(self, volume):
         with self.lock:
             self.volume = min(1.5, max(0.0, float(volume)))
@@ -205,7 +209,8 @@ class Reader:
         self.loading = True
         self.audio_missing_since = None
         self.model_factory = model_factory or ModelClient
-        self.output_factory = output_factory or AudioOutput
+        self.output_factory = output_factory or (
+            lambda events, callback: AudioOutput(events, callback, activity=self.audio.needs_output))
         self.model_path = model_path or model_directory()
         self.thread = threading.Thread(target=self._run, name="offline-tts", daemon=True)
         self.thread.start()
@@ -308,7 +313,7 @@ class Reader:
 
     def _playback_expired(self):
         with self.audio.lock:
-            playing, number = self.audio.active, self.audio.number
+            playing, number = self.audio.active and not self.audio.paused, self.audio.number
         if not playing or self.output.available:
             self.audio_missing_since = None
             return None
