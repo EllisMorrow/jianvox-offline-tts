@@ -89,6 +89,36 @@ with patch.object(ctk.CTk, "mainloop"), patch("reader_app.clear_legacy_artifacts
             app.reader = None
         app.default_keys()
         assert app.key_entries["read"].get() == "F4"
+        # Switching must not unmap pages or recreate editor state. Invisible
+        # stacked pages must also stay out of keyboard traversal.
+        unmapped = []
+        bindings = []
+        for name, page in app.ui.pages.items():
+            bindings.append((page, page.bind("<Unmap>", lambda event, n=name: unmapped.append(n), add="+")))
+        original_pages = dict(app.ui.pages)
+        app.text.insert("1.0", "切换页面保留文字。")
+        app.text.edit_separator()
+        app.text.insert("end", "撤销检查。")
+        for name in ("快捷键", "设置", "朗读") * 3:
+            app.ui.show_page(name)
+            app.root.update()
+            assert app.ui.pages == original_pages
+            assert all(page.winfo_ismapped() for page in app.ui.pages.values())
+            for hidden_name, options in app.ui.page_focus.items():
+                if hidden_name != name:
+                    assert all(str(widget.tk.call(widget._w, "cget", "-takefocus")) == "0"
+                               for widget, _ in options)
+        assert not unmapped, unmapped
+        app.text.edit_undo()
+        assert app.text.get("1.0", "end-1c") == "切换页面保留文字。"
+        with patch.object(app.ui.pages["朗读"], "tkraise") as raise_page, \
+             patch.object(app.ui, "update_navigation") as navigation:
+            app.ui.show_page("朗读")
+            raise_page.assert_not_called()
+            navigation.assert_not_called()
+        for page, binding in bindings:
+            page.unbind("<Unmap>", binding)
+        app.clear_text()
         original_editor = app.text
         app.text.insert("1.0", "切换主题时保留这段公开测试文字。")
         app.reader = Mock()

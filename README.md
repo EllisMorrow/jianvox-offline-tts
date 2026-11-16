@@ -11,7 +11,7 @@
 
 面向 Windows 的中文优先朗读工具，支持九位内置声音、语气描述、暂停、变速与音量增强。基于 Qwen3-TTS 1.7B CustomVoice 和 faster-qwen3-tts，不是 Qwen 官方客户端。
 
-> 当前版本：**v0.8.5**。首次使用请从 [Releases 发布页](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载下文指定的源码包，并按步骤自动准备环境。
+> 当前版本：**v0.8.6**。首次使用请从 [Releases 发布页](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载下文指定的源码包，并按步骤自动准备环境。
 
 ## 先确认电脑是否适用
 
@@ -65,6 +65,8 @@
 ## 界面预览
 
 以下为插画风界面的白天 / 夜晚预览截图（预览模式未加载语音模型）。设置中可独立选择配色及白天、夜晚或跟随系统外观。
+
+v0.8.6 优化页面切换，减少重复布局与重绘，保留正文、撤销记录及页面控件状态。
 
 v0.8.3 在空闲、朗读结束、停止或暂停时释放声卡，减少静音音频流对 Windows 自动睡眠的影响；模型仍可驻留显存。其他软件或驱动的睡眠阻止请求不在此修复范围内。
 

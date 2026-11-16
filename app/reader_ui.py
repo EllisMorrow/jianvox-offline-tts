@@ -2,6 +2,7 @@
 import ctypes as C
 from ctypes import wintypes as W
 import customtkinter as ctk
+from tkinter import TclError
 from hotkeys import ACTION_NAMES
 from reader_core import VOICES
 from version import VERSION
@@ -46,9 +47,11 @@ class ReaderUI:
         self.fonts = {}
         self.pages = {}
         self.nav = {}
-        self.current_page = "朗读"
+        self.current_page = None
+        self.page_focus = {}
         self.sidebar_collapsed = False
         self._header_mode = None
+        self._header_layout_key = None
         self._toolbar_mode = None
         self._empty_visible = False
         self.palette_name = app.preferences.color_theme
@@ -167,12 +170,29 @@ class ReaderUI:
         self.page_host.grid_columnconfigure(0, weight=1)
         self.page_host.grid_rowconfigure(0, weight=1)
         for name in self.nav:
-            page = self.themed(ctk.CTkFrame, self.page_host, fg_color="transparent")
+            # Keep opaque pages mounted at the same size. Raising one avoids
+            # unmapping the entire workspace and repainting it from blank.
+            page = self.themed(ctk.CTkFrame, self.page_host, fg_color=BG)
+            page.grid(row=0, column=0, sticky="nsew")
             page.grid_columnconfigure(0, weight=1)
             self.pages[name] = page
         self.build_reader(self.pages["朗读"])
         self.build_hotkeys(self.pages["快捷键"])
         self.build_settings(self.pages["设置"])
+        for name, page in self.pages.items():
+            focus_options = []
+            children = [page]
+            while children:
+                widget = children.pop()
+                children.extend(widget.winfo_children())
+                try:
+                    value = str(widget.tk.call(widget._w, "cget", "-takefocus"))
+                except TclError:
+                    continue  # Some native widgets have no traversal option.
+                if value != "0":
+                    focus_options.append((widget, value))
+                    widget.tk.call(widget._w, "configure", "-takefocus", 0)
+            self.page_focus[name] = focus_options
 
         self.status_area = self.themed(ctk.CTkFrame, self.workspace, fg_color="transparent")
         self.status_area.grid(row=2, column=0, sticky="ew", pady=(12, 0))
@@ -204,6 +224,10 @@ class ReaderUI:
 
     def layout_header(self, _event=None):
         width = self.header._reverse_widget_scaling(self.header.winfo_width())
+        key = (self.current_page == "朗读", width)
+        if key == self._header_layout_key:
+            return
+        self._header_layout_key = key
         self.hint_label.configure(wraplength=max(100, width))
         if self.current_page != "朗读":
             self.voice_controls.grid_remove()
@@ -227,11 +251,23 @@ class ReaderUI:
         self.hint_label.grid(row=2)
 
     def show_page(self, name):
-        for page in self.pages.values():
-            page.grid_forget()
-        self.pages[name].grid(row=0, column=0, sticky="nsew")
+        if name == self.current_page:
+            return
+        previous = self.current_page
+        page = self.pages[name]
+        page.tkraise()
+        # Occluded pages stay mapped for painting, but must not receive Tab
+        # focus. Do not rebuild inputs, scroll views or their undo histories.
+        if previous is not None:
+            for widget, _ in self.page_focus[previous]:
+                widget.tk.call(widget._w, "configure", "-takefocus", 0)
+            focused = self.app.root.focus_get()
+            if focused and str(focused).startswith(str(self.pages[previous]) + "."):
+                page.focus_set()
+        for widget, value in self.page_focus[name]:
+            widget.tk.call(widget._w, "configure", "-takefocus", value)
         self.current_page = name
-        self.update_navigation()
+        self.update_navigation((previous, name))
         self.title.configure(text={"朗读":"文字朗读", "快捷键":"键盘快捷键", "设置":"偏好设置"}[name])
         self.subtitle.configure(text={"朗读": "让文字，自然地成为声音。", "快捷键": "一个按键，随时开始倾听。",
                                       "设置": "把聆笺调成你喜欢的样子。"}[name])
@@ -239,8 +275,11 @@ class ReaderUI:
             self.hint_label.grid(row=2)
         self.layout_header()
 
-    def update_navigation(self):
-        for label, button in self.nav.items():
+    def update_navigation(self, names=None):
+        for label in self.nav if names is None else names:
+            if label is None:
+                continue
+            button = self.nav[label]
             selected = label == self.current_page
             ink = self.colors["ACCENT" if selected else "MUTED"]
             button.configure(fg_color=self.colors["SELECTED"] if selected else "transparent", text_color=ink,
