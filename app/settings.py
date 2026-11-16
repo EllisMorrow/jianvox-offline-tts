@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from hotkeys import DEFAULT_HOTKEYS, validate_bindings
 from ui_themes import PALETTE_LABELS
+from symbol_filter import DEFAULT_IGNORED_SYMBOLS
 
 PROJECT = Path(__file__).resolve().parent.parent
 LOCAL = PROJECT / ".local"
@@ -58,7 +59,7 @@ class Preferences:
     close_to_tray: bool = True
     color_theme: str = "lavender"
     symbol_filter_enabled: bool = False
-    ignored_symbols: str = ""
+    ignored_symbols: str = DEFAULT_IGNORED_SYMBOLS
 
     def validate(self):
         if self.voice not in {"serena", "vivian", "uncle_fu", "dylan", "eric", "ryan", "aiden", "ono_anna", "sohee"}:

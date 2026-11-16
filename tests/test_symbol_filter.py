@@ -3,13 +3,25 @@ from pathlib import Path
 from types import SimpleNamespace
 import unittest
 
-from symbol_filter import filter_symbols
+from symbol_filter import filter_symbols, DEFAULT_IGNORED_SYMBOLS
 from settings import Preferences
 from reader_app import App
 from reader_core import split_text
 
 
 class SymbolFilterTests(unittest.TestCase):
+    def test_markdown_defaults_and_preserved_user_customization(self):
+        self.assertEqual(Preferences().ignored_symbols, DEFAULT_IGNORED_SYMBOLS)
+        self.assertEqual(filter_symbols('# **重点** ==高亮== ~~删除~~ `代码` > 引用 | 表格',
+                                        True, DEFAULT_IGNORED_SYMBOLS),
+                         ' 重点 高亮 删除 代码  引用  表格')
+        self.assertEqual(filter_symbols('-12.5 + 3，结束。', True, DEFAULT_IGNORED_SYMBOLS),
+                         '-12.5 + 3，结束。')
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'prefs.json'
+            Preferences(ignored_symbols='').save(path)
+            self.assertEqual(Preferences.load(path).ignored_symbols, '')
+
     def test_literal_characters_no_regex_and_whitespace_preserved(self):
         text = '**你好** # Hello_world~ [test].\n下一行。'
         result = filter_symbols(text, True, '*#_~[] .\n')

@@ -1,5 +1,7 @@
 """Literal character exclusion; never interprets regex or modifies editor text."""
 
+DEFAULT_IGNORED_SYMBOLS = "*#_~=`>|"
+
 
 def filter_symbols(text, enabled=False, symbols=""):
     if not enabled or not symbols:

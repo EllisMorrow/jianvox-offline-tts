@@ -11,7 +11,7 @@
 
 面向 Windows 的中文优先朗读工具，支持九位内置声音、语气描述、暂停、变速与音量增强。基于 Qwen3-TTS 1.7B CustomVoice 和 faster-qwen3-tts，不是 Qwen 官方客户端。
 
-> 当前版本：**v0.8.4**。首次使用请从 [Releases 发布页](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载下文指定的源码包，并按步骤自动准备环境。
+> 当前版本：**v0.8.5**。首次使用请从 [Releases 发布页](https://github.com/EllisMorrow/jianvox-offline-tts/releases/latest) 下载下文指定的源码包，并按步骤自动准备环境。
 
 ## 先确认电脑是否适用
 
@@ -202,6 +202,8 @@ python -B scripts/build_release.py
 
 
 ### 符号屏蔽（v0.8.4 起）
+
+v0.8.5 为新用户预填常用 Markdown 标记，包含高亮、加粗、标题、删除线、代码、引用和表格的常用字符；开关默认关闭。已有自定义列表（包括主动清空的列表）保持不变，可自行补充符号。默认不屏蔽负号或小数点；该功能按字符过滤，不完整解析 Markdown。
 
 在“设置 → 符号屏蔽”填写例如 `*#_~`，点击“保存屏蔽符号”，再开启“忽略指定符号”。每个非空白字符单独忽略，不是词组或正则表达式，无需逗号分隔；不要填写说明文字。开关切换会立即保存列表及开关；关闭后保留列表，可随时再次启用。
 
