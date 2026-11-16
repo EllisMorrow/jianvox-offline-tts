@@ -57,6 +57,8 @@ class Preferences:
     chaptered_export: bool = False
     close_to_tray: bool = True
     color_theme: str = "lavender"
+    symbol_filter_enabled: bool = False
+    ignored_symbols: str = ""
 
     def validate(self):
         if self.voice not in {"serena", "vivian", "uncle_fu", "dylan", "eric", "ryan", "aiden", "ono_anna", "sohee"}:
@@ -80,6 +82,10 @@ class Preferences:
             raise ValueError("分章导出设置无效。")
         if not isinstance(self.close_to_tray, bool):
             raise ValueError("关闭窗口后进入托盘设置无效。")
+        if not isinstance(self.symbol_filter_enabled, bool):
+            raise ValueError("符号屏蔽开关无效。")
+        if not isinstance(self.ignored_symbols, str) or len(self.ignored_symbols) > 500:
+            raise ValueError("屏蔽符号最多 500 个字符。")
         return self
 
     @classmethod

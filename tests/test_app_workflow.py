@@ -5,6 +5,8 @@ from unittest.mock import Mock, patch
 import queue
 import threading
 import unittest
+import tempfile
+from pathlib import Path
 
 from reader_app import App
 from reader_core import Reader, AudioBuffer
@@ -14,6 +16,39 @@ from ui_themes import get_palette
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_filter_applies_to_editor_and_both_selection_sources(self):
+        for source in ('editor', 'clipboard', 'uia'):
+            app = self.app()
+            reader = self.reader_without_worker(app)
+            app.preferences.symbol_filter_enabled = True
+            app.preferences.ignored_symbols = '*#'
+            app.read('**你好** # Hello', source=source)
+            self.assertEqual(reader.pending.parts, ['你好 Hello'])
+            app.text.delete.assert_not_called()
+            reader.stop()
+            app.preferences.symbol_filter_enabled = False
+            app.read('**你好** # Hello', source=source)
+            self.assertEqual(reader.pending.parts, ['**你好** # Hello'])
+
+    def test_export_filters_the_model_input_without_changing_editor(self):
+        app = self.app()
+        reader = self.reader_without_worker(app)
+        app.preferences.symbol_filter_enabled = True
+        app.preferences.ignored_symbols = '*#'
+        app.preferences.export_directory = ''
+        app.text.get.return_value = '**你好** # Hello'
+        app.export_mode = Mock()
+        app.export_mode.get.return_value = '单个 MP3'
+        app.export_directory = Mock()
+        app.export_progress = Mock()
+        app.persist = Mock()
+        with tempfile.TemporaryDirectory() as folder:
+            with patch('reader_app.filedialog.asksaveasfilename', return_value=str(Path(folder)/'test.mp3')):
+                app.export_mp3()
+            self.assertEqual(reader.pending.parts, ['你好 Hello'])
+            self.assertTrue(app.exporting)
+            app.text.delete.assert_not_called()
+
     def app(self):
         app = App.__new__(App)
         app.reader = SimpleNamespace(ready=True, number=1, stop=Mock(),

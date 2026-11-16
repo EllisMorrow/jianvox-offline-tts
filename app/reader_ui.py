@@ -463,8 +463,25 @@ class ReaderUI:
         app.style_box.pack(fill="x", padx=18)
         app.style_box.insert("1.0", app.preferences.style)
         self.button(style, "保存语气", app.save_style, width=104, height=34).pack(anchor="w", padx=18, pady=13)
+        symbols = self.card(panel)
+        symbols.grid(row=2, column=0, sticky="ew", pady=(0, 14))
+        self.label(symbols, "符号屏蔽", 14, True).pack(anchor="w", padx=18, pady=(16, 8))
+        app.symbol_filter_switch = self.themed(ctk.CTkSwitch, symbols, text="忽略指定符号",
+            command=app.save_symbol_filter, fg_color=TRACK, progress_color=PRIMARY_FILL,
+            text_color=INK, font=self.font())
+        app.symbol_filter_switch.pack(anchor="w", padx=18, pady=(0, 10))
+        if app.preferences.symbol_filter_enabled:
+            app.symbol_filter_switch.select()
+        self.label(symbols, "每个非空白字符单独屏蔽，无需逗号分隔。例如：*#_~\n空格和换行仅用于分隔；请勿填写说明文字。原文保持不变。",
+                   11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 10))
+        app.symbol_filter_box = self.themed(ctk.CTkTextbox, symbols, height=68,
+            fg_color=FIELD, text_color=INK, border_width=1, border_color=BORDER,
+            font=self.font(), wrap="word", corner_radius=12)
+        app.symbol_filter_box.pack(fill="x", padx=18)
+        app.symbol_filter_box.insert("1.0", app.preferences.ignored_symbols)
+        self.button(symbols, "保存屏蔽符号", app.save_symbol_filter, width=130, height=34).pack(anchor="w", padx=18, pady=13)
         general = self.card(panel)
-        general.grid(row=2, column=0, sticky="ew", pady=(0, 14))
+        general.grid(row=3, column=0, sticky="ew", pady=(0, 14))
         self.label(general, "保存与启动", 14, True).pack(anchor="w", padx=18, pady=(16, 12))
         self.label(general, "MP3 默认保存目录", 12).pack(anchor="w", padx=18, pady=(0, 6))
         row = self.themed(ctk.CTkFrame, general, fg_color="transparent")
@@ -486,13 +503,13 @@ class ReaderUI:
         self.label(general, "开启后在后台继续运行；关闭此项后，点击 × 将退出程序、停止任务并清空窗口文字。",
                    11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 17))
         privacy = self.card(panel)
-        privacy.grid(row=3, column=0, sticky="ew", pady=(0, 5))
+        privacy.grid(row=4, column=0, sticky="ew", pady=(0, 5))
         self.label(privacy, "隐私与设置文件", 14, True).pack(anchor="w", padx=18, pady=(16, 8))
         self.label(privacy, "正文仅在内存中保留，手动清空或退出时删除。\n不保存正文、朗读历史或使用统计到磁盘。\nWindows 剪贴板历史及其他软件记录不在清理范围内。",
                    11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 12))
         self.button(privacy, "打开设置文件夹", app.open_settings_folder, width=150, height=34).pack(anchor="w", padx=18, pady=(0, 16))
         recovery = self.card(panel)
-        recovery.grid(row=4, column=0, sticky="ew", pady=(10, 5))
+        recovery.grid(row=5, column=0, sticky="ew", pady=(10, 5))
         self.label(recovery, "恢复与诊断", 14, True).pack(anchor="w", padx=18, pady=(16, 8))
         self.label(recovery, "声音异常时可重新加载模型；请先停止当前任务。\n默认播放设备切换后自动重新连接，无设备时仍可导出 MP3。",
                    11, color=MUTED, justify="left", wraplength=520).pack(anchor="w", padx=18, pady=(0, 10))

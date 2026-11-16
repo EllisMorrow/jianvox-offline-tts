@@ -24,6 +24,7 @@ from ui_themes import get_palette, PALETTE_LABELS, PALETTE_CHOICES
 from runtime_errors import RuntimeIssue
 from win_native import Native, CopyCancelled, clipboard_text, copy_selection, clear_clipboard_if_unchanged, U
 
+from symbol_filter import filter_symbols
 from version import APP_NAME, VERSION
 
 THEME_CHOICES = {"白天": "light", "夜晚": "dark", "跟随系统": "system"}
@@ -189,7 +190,7 @@ class App:
             return
         try:
             self.save_playback()
-            number = self.reader.submit(text, self.preferences.voice, self.preferences.style,
+            number = self.reader.submit(self.prepare_speech_text(text), self.preferences.voice, self.preferences.style,
                                        speed=self.preferences.speed, output=target,
                                        chaptered=self.export_mode.get() == "分章 MP3")
             self.export_id = number
@@ -233,11 +234,14 @@ class App:
         self.pause_button.configure(state="disabled")
         self.status.set("正在分析文字… 可点击停止取消。")
         voice, style, speed = self.preferences.voice, self.preferences.style, self.preferences.speed
+        filter_enabled = getattr(self.preferences, "symbol_filter_enabled", False)
+        ignored_symbols = getattr(self.preferences, "ignored_symbols", "")
         def prepare():
             try:
-                parts = split_text(text, max_chars=1_000_000)
-                analysis = analyze_text(text, parts=parts)
-                sample = select_sample(text, parts=parts)
+                filtered = filter_symbols(text, filter_enabled, ignored_symbols)
+                parts = split_text(filtered, max_chars=1_000_000)
+                analysis = analyze_text(filtered, parts=parts)
+                sample = select_sample(filtered, parts=parts)
                 self.events.put(("estimate_prepared", (token, analysis, sample, voice, style, speed)))
             except ValueError as exc:
                 self.events.put(("estimate_error", (token, str(exc))))
@@ -359,6 +363,24 @@ class App:
         self.speed.set(1.0)
         self.playback_changed()
 
+    def prepare_speech_text(self, text):
+        return filter_symbols(text, getattr(self.preferences, "symbol_filter_enabled", False),
+                              getattr(self.preferences, "ignored_symbols", ""))
+
+    def save_symbol_filter(self):
+        value = self.symbol_filter_box.get("1.0", "end-1c")
+        if len(value) > 500:
+            if self.preferences.symbol_filter_enabled:
+                self.symbol_filter_switch.select()
+            else:
+                self.symbol_filter_switch.deselect()
+            self.show_error("屏蔽符号最多 500 个字符。")
+            return
+        self.preferences.ignored_symbols = value
+        self.preferences.symbol_filter_enabled = bool(self.symbol_filter_switch.get())
+        self.persist()
+        self.status.set("符号屏蔽设置已保存，下次朗读或导出生效。")
+
     def save_style(self):
         value = self.style_box.get("1.0", "end").strip()
         if len(value) > 500:
@@ -402,7 +424,7 @@ class App:
             return
         try:
             self.save_playback()
-            number = self.reader.submit(text, self.preferences.voice, self.preferences.style,
+            number = self.reader.submit(self.prepare_speech_text(text), self.preferences.voice, self.preferences.style,
                                         started, self.preferences.speed)
             self.metrics = {"request": number, "characters": len(text.strip()), "speed": self.preferences.speed,
                             "source": source}

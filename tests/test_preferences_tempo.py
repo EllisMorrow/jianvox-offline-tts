@@ -28,7 +28,7 @@ class PreferenceTests(unittest.TestCase):
                                 hotkeys=dict(DEFAULT_HOTKEYS, read="Ctrl+Alt+R"))
             prefs.save(path)
             self.assertEqual(Preferences.load(path), prefs)
-            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "color_theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory", "chaptered_export", "close_to_tray"})
+            self.assertEqual(set(json.loads(path.read_text("utf-8"))), {"voice", "style", "theme", "color_theme", "speed", "volume", "hotkeys", "priority_hotkeys", "export_directory", "chaptered_export", "close_to_tray", "symbol_filter_enabled", "ignored_symbols"})
 
     def test_legacy_settings_default_to_system_theme(self):
         with tempfile.TemporaryDirectory() as tmp:
